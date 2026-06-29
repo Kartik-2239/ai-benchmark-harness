@@ -4,6 +4,7 @@ export interface Datajson<TExpectedAnswer> {
     id: string
     name: string
     description: string
+    version: string
     data: Dataset<TExpectedAnswer>[]
 }
 

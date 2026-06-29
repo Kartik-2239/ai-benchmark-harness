@@ -1,6 +1,7 @@
 import { Output, type LanguageModel, type ToolSet } from "ai";
 import { z } from "zod";
 type Model = {
+    id: string
     model: LanguageModel
     api_key: string
 }
@@ -12,7 +13,8 @@ export interface Config<TExpectedAnswer, TSchema, TToolSet> {
         expected_answer: TExpectedAnswer,
         model_answer: TSchema,
         tools_calls: string[]
-    ) => boolean | null
+    ) => number | null
+    schema: z.ZodType<TSchema>
     tools: TToolSet
     models: Model[]
 }

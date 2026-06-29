@@ -4,6 +4,7 @@ interface CacheFile {
     id: string
     dataset_id: string
     dataset_path: string
+    models: string[]
     version: string
     answers: CacheAnswer[]
 }
@@ -13,8 +14,9 @@ interface CacheAnswer {
     question: string
     context: string
     answer: string
+    model: string
     cost: number
-    time: string
+    time: number
     score: number
 }
 
@@ -25,11 +27,12 @@ interface CacheWriteParams {
     version: string
     question_id: string
     question: string
-    answer: CacheAnswer
+    answer: string
+    model: string
     cost: number
-    time: string
+    time: number
     context: string
     score: number
 }
 
-export type { CacheFile, CacheWriteParams }
+export type { CacheFile, CacheAnswer, CacheWriteParams }

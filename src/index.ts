@@ -1,74 +1,71 @@
 import type { Config } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
 import type { Datajson } from "./types/data.js";
-import { type Output, type ToolSet, tool } from "ai";
+import { type LanguageModel, type ToolSet } from "ai";
 import { z } from "zod";
 
 type ExpectedAnswer = string
+
 const schema = z.object({
-    recipe: z.object({
-        name: z.string(),
-        ingredients: z.array(
-            z.object({
-            name: z.string(),
-            amount: z.string(),
-            })
-        ),
-        steps: z.array(z.string()),
-    }),
+    answer: z.string(),
 })
 type Schema = z.infer<typeof schema>;
 
-function evaluatorFunction(question: string, expected_answer: ExpectedAnswer, model_answer: Schema, tool_calls: string[]): boolean | null {
-    if (model_answer.recipe.name = model_answer.recipe.name.trim()){
-        return true
-    }else {
-        return null
+function evaluatorFunction(question: string, expected_answer: ExpectedAnswer, model_answer: Schema, tool_calls: string[]): number | null {
+    if (model_answer.answer.trim() !== "") {
+        return 1
     }
+    return null
 }
 
-let config: Config<ExpectedAnswer, Schema, ToolSet> = {
+const config: Config<ExpectedAnswer, Schema, ToolSet> = {
     evaluator_models: null,
     evaluator_function: evaluatorFunction,
-    models: [],
-    tools: {
-        weather: tool({
-            description: "Get the weather in a location",
-            inputSchema: z.object({
-                location: z.string(),
-            })
-        })
-    }
+    schema: schema,
+    models: [
+        { id: "openai-gpt-4o", model: null as unknown as LanguageModel, api_key: "placeholder" },
+        { id: "anthropic-claude-3.5-sonnet", model: null as unknown as LanguageModel, api_key: "placeholder" },
+    ],
+    tools: {} as ToolSet,
 }
 const data: Datajson<ExpectedAnswer> = {
-    id: "data-1",
-    name: "Sample Data",
-    description: "This is a sample dataset for benchmarking.",
+    id: "test-dataset",
+    name: "Test Dataset",
+    description: "Placeholder dataset for simulating a benchmark run without AI.",
+    version: "1",
     data: [
         {
-            id: "question-1",
+            id: "q-1",
             context: [{ role: "user", content: "What is the capital of France?" }],
             expected_answer: "Paris"
         },
         {
-            id: "question-2",
+            id: "q-2",
             context: [{ role: "user", content: "What is 2 + 2?" }],
             expected_answer: "4"
-        }
+        },
+        {
+            id: "q-3",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
     ]
 };
 const benchmark = new Benchmark(config, "benchmark-1", data);
 
-for (const event of benchmark.run()) {
+for await (const event of benchmark.run()) {
     switch (event.type) {
-        case "update":
-            console.log("Update:", event.data);
+        case "progress":
+            console.log(`[${event.model}] ${event.questionId} — score: ${event.score}, cost: ${event.cost}, time: ${event.timeMs}ms${event.cached ? " (cached)" : ""}`);
             break;
         case "error":
-            console.error("Error:", event.message);
+            console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
             break;
         case "finish":
-            console.log("Benchmark finished.");
+            console.log(`\nBenchmark finished. totalCost: ${event.totalCost}, avgScore: ${event.avgScore}`);
+            for (const m of event.perModel) {
+                console.log(`  ${m.model}: cost=${m.cost}, avgScore=${m.avgScore}, count=${m.count}`);
+            }
             break;
     }
 }

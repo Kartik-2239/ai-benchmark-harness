@@ -1,43 +1,37 @@
-import { type CacheFile, type CacheWriteParams } from "@/types/cache.js";
+import { type CacheFile, type CacheAnswer, type CacheWriteParams } from "@/types/cache.js";
 import fs from "fs"
-// file path at the top
-// dataset id
-// time
-// list of answers where each answer would have the question id
-//
-//  {
-//      dataset_id: string
-//      time: string
-//      answers: [{
-//          question_id: string
-//          answer: string
-//          cost: number
-//      }]
-//  }
 
-// params -> dataset_id, dataset_name, version, question_id, answer, cost, time, context
 const PATH = "./cache"
-export function CacheWrite(cacheWriteParams: CacheWriteParams): void {
-    var cacheFile = FindCacheFile(cacheWriteParams.dataset_id, cacheWriteParams.version)
+
+export function CacheWrite(p: CacheWriteParams, models: string[]): void {
+    let cacheFile = FindCacheFile(p.dataset_id, p.version)
     if (cacheFile === null) {
         cacheFile = {
-            id: cacheWriteParams.id,
-            dataset_id: cacheWriteParams.dataset_id,
-            dataset_path: cacheWriteParams.dataset_path,
-            version: cacheWriteParams.version,
-            answers: []
+            id: p.id,
+            dataset_id: p.dataset_id,
+            dataset_path: p.dataset_path,
+            version: p.version,
+            answers: [],
+            models: models
         }
     }
-    cacheFile.answers = [{
-        question_id: cacheWriteParams.question_id,
-        question: cacheWriteParams.question,
-        context: cacheWriteParams.context,
-        answer: cacheWriteParams.answer.answer,
-        cost: cacheWriteParams.cost,
-        time: cacheWriteParams.time,
-        score: cacheWriteParams.score
-    }]
-    fs.writeFileSync(`${PATH}/${cacheWriteParams.dataset_id}-${cacheWriteParams.version}.json`, JSON.stringify(cacheFile, null, 2))
+    cacheFile.answers.push({
+        question_id: p.question_id,
+        question: p.question,
+        context: p.context,
+        answer: p.answer,
+        model: p.model,
+        cost: p.cost,
+        time: p.time,
+        score: p.score
+    })
+    fs.writeFileSync(`${PATH}/${p.dataset_id}-${p.version}.json`, JSON.stringify(cacheFile, null, 2))
+}
+
+export function CacheRead(dataset_id: string, version: string, model: string, question_id: string): CacheAnswer | null {
+    const cacheFile = FindCacheFile(dataset_id, version)
+    if (cacheFile === null) return null
+    return cacheFile.answers.find(a => a.model === model && a.question_id === question_id) ?? null
 }
 
 function FindCacheFile(dataset_id: string, version: string): CacheFile | null {
