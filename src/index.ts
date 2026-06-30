@@ -10,33 +10,8 @@ import { createOpenRouter, openrouter } from "@openrouter/ai-sdk-provider";
 import { render } from "ink";
 import React from "react";
 import { FindCacheFile } from "./benchmark/cache.js";
-type ExpectedAnswer = string
 
-const schema = z.object({
-    answer: z.string(),
-})
-type Schema = z.infer<typeof schema>;
 
-function evaluatorFunction(question: string, expected_answer: ExpectedAnswer, model_answer: Schema, tool_calls: string[]): number {
-    // console.log(tool_calls)
-    if (tool_calls.length > 0) {
-        return 1000
-    }
-    return 10
-}
-
-function generate_random_model() {
-    const s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    const num = "0123456789"
-
-    let p1 = ""
-    for (let i = 0; i < 5; i++) {
-        p1 += s[Math.floor(Math.random() * s.length)] || ""
-    }
-    const p2 = s[Math.floor(Math.random() * s.length)] || ""
-
-    return p1 + "-" + p2
-}
 
 const models: Model[]  = [
     {
@@ -51,12 +26,6 @@ const models: Model[]  = [
     },
 ]
 
-const config: Config<ExpectedAnswer, Schema> = {
-    evaluator_models: null,
-    evaluator_function: evaluatorFunction,
-    schema: schema,
-    models: models
-}
 const date = new Date()
 const data: Datajson<ExpectedAnswer> = {
     id: date.getTime().toString(),
@@ -76,47 +45,38 @@ const data: Datajson<ExpectedAnswer> = {
         },
     ])
 };
-const benchmark = new Benchmark(config, "benchmark-1", data);
 
-var cacheFile: CacheFile<ExpectedAnswer> | undefined
-var last: ReturnType<typeof render> | undefined
 
-cacheFile = {
-    id: data.id,
-    name: data.name,
-    dataset_id: data.id,
-    dataset_path: "",
-    version: data.version,
-    models: config.models.map(m => m.id),
-    answers: []
-}
-last = render(React.createElement(TableProvider, { cacheFile: cacheFile, data: data }))
 
-for await (const event of benchmark.run()) {
-    switch (event.type) {
-        case "progress":
-            const cf = FindCacheFile<ExpectedAnswer>(data.id, data.version)
-            if (cf) {
-                cacheFile = cf
-                if (!last) {
-                    last = render(React.createElement(TableProvider, { cacheFile: cacheFile, data: data }))
-                }else {
-                    last.rerender(React.createElement(TableProvider, { cacheFile: cacheFile, data: data }))
-                }
-            }
-            // console.log(`[${event.model}] ${event.questionId} — score: ${event.score}, cost: ${event.cost}, time: ${event.timeMs}ms${event.cached ? " (cached)" : ""}`);
-            break;
-        case "error":
-            console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
-            break;
-        case "finish":
-            console.log(`\nBenchmark finished. totalCost: ${event.totalCost}, avgScore: ${event.avgScore}`);
-            for (const m of event.perModel) {
-                console.log(`  ${m.model}: cost=${m.cost}, avgScore=${m.avgScore}, count=${m.count}`);
-            }
-            break;
+type ExpectedAnswer = string
+
+const schema = z.object({
+    answer: z.string(),
+
+})
+type Schema = z.infer<typeof schema>;
+
+function evaluatorFunction(
+    question: string, 
+    expected_answer: ExpectedAnswer, 
+    model_answer: Schema, 
+    tool_calls: string[]
+): number {
+    if (tool_calls.length > 0) {
+        return 1000
     }
+    return 10
 }
+
+const config: Config<ExpectedAnswer, Schema> = {
+    evaluator_models: null,
+    evaluator_function: evaluatorFunction,
+    schema: schema,
+    models: models
+}
+
+const benchmark = new Benchmark(config, "benchmark-1", data);
+benchmark.run()
 
 // var last: ReturnType<typeof render> | undefined
 // fs.readdirSync("cache").forEach((file, index) => {

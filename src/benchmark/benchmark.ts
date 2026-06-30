@@ -4,12 +4,18 @@ import { type BenchmarkEvent } from '@/types/benchmark-events.js'
 import { CacheWrite } from './cache.js'
 import type { ModelMessage } from 'ai'
 import { generate } from '@/benchmark/ai.js'
+import { render } from 'ink'
+import type { CacheFile } from '@/types/cache.js'
+import { TableProvider } from '@/tui/tui.js'
+import React from 'react'
 
 export class Benchmark<TExpectedAnswer, TSchema> {
     config: Config<TExpectedAnswer, TSchema>
     id: string
     data: Datajson<TExpectedAnswer>
     version: string
+    private last: ReturnType<typeof render> | undefined
+    private cacheFile: CacheFile<TExpectedAnswer> | undefined
     constructor(config: Config<TExpectedAnswer, TSchema>, id: string, data: Datajson<TExpectedAnswer>) {
         this.config = config
         this.id = id
@@ -22,18 +28,32 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         }
         return null
     }
-    async *run(): AsyncGenerator<BenchmarkEvent, void, unknown> {
+    async run(): Promise<void> {
+        for await (const event of this.runner()) {
+            switch (event.type) {
+                case "progress":
+                    break;
+                case "error":
+                    console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
+                    break;
+                case "finish":
+                    break;
+            }
+        }
+    }
+    async *runner(): AsyncGenerator<BenchmarkEvent, void, unknown> {
         var final: BenchmarkEvent = {
             type: "finish",
             totalCost: 0,
             avgScore: 0,
             perModel: []
         }
+        this.render()
         for (const model of this.config.models) {
             for (const question of this.data.data) {
                 const result = await generate(model.model, question.context, question.tools, this.config.schema)
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
-                CacheWrite<TExpectedAnswer>({
+                const to_save = CacheWrite<TExpectedAnswer>({
                     id: this.id,
                     name: this.data.name,
                     dataset_id: this.data.id,
@@ -77,6 +97,8 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                     timeMs: result.time,
                     cached: true
                 }
+                this.cacheFile = to_save
+                this.render()
             }
         }
         yield {
@@ -91,49 +113,22 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             }))
         }
     }
-
-    async *fakeRun(): AsyncGenerator<BenchmarkEvent, void, unknown> {
-        for (const model of this.config.models) {
-            for (const question of this.data.data) {
-                const answer = `${question.context[0]?.content.slice(0, 50)}... (simulated answer)`
-                CacheWrite<TExpectedAnswer>({
-                    id: this.id,
-                    dataset_id: this.data.id,
-                    name: this.data.name,
-                    expected_answer: question.expected_answer,
-                    dataset_path: "",
-                    version: this.version,
-                    question_id: question.id,
-                    question: question.context[question.context.length-1]?.content as string,
-                    context: question.context,
-                    answer: answer,
-                    model: model.id,
-                    cost: parseFloat((Math.random()).toFixed(2)),
-                    time: Math.floor(Math.random() * 1000),
-                    score: Math.floor(Math.random() * 100),
-                    tools: []
-                }, this.config.models.map(m => m.id))
-                yield {
-                    type: "progress",
-                    model: model.id,
-                    questionId: question.id,
-                    score: Math.floor(Math.random() * 100),
-                    cost: Math.floor(Math.random() * 10),
-                    timeMs: Math.floor(Math.random() * 1000),
-                    cached: true
-                }
+    private render(): void {
+        if (!this.cacheFile) {
+            this.cacheFile = {
+                id: this.data.id,
+                name: this.data.name,
+                dataset_id: this.data.id,
+                dataset_path: "",
+                version: this.data.version,
+                models: this.config.models.map(m => m.id),
+                answers: []
             }
         }
-        yield {
-            type: "finish",
-            totalCost: Math.floor(Math.random() * 100),
-            avgScore: Math.floor(Math.random() * 100),
-            perModel: this.config.models.map(m => ({
-                model: m.id,
-                cost: Math.floor(Math.random() * 10),
-                avgScore: Math.floor(Math.random() * 100),
-                count: this.data.data.length
-            }))
+        if (!this.last) {
+            this.last = render(React.createElement(TableProvider, { cacheFile: this.cacheFile, data: this.data }))
+        }else {
+            this.last.rerender(React.createElement(TableProvider, { cacheFile: this.cacheFile, data: this.data }))
         }
     }
 }
