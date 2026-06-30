@@ -18,7 +18,7 @@ function evaluatorFunction(question: string, expected_answer: ExpectedAnswer, mo
     return null
 }
 
-const config: Config<ExpectedAnswer, Schema, ToolSet> = {
+const config: Config<ExpectedAnswer, Schema> = {
     evaluator_models: null,
     evaluator_function: evaluatorFunction,
     schema: schema,
@@ -33,7 +33,7 @@ const data: Datajson<ExpectedAnswer> = {
     name: "Test Dataset",
     description: "Placeholder dataset for simulating a benchmark run without AI.",
     version: "1",
-    data: [
+    data: ([
         {
             id: "q-1",
             context: [{ role: "user", content: "What is the capital of France?" }],
@@ -49,11 +49,61 @@ const data: Datajson<ExpectedAnswer> = {
             context: [{ role: "user", content: "What color is the sky on a clear day?" }],
             expected_answer: "blue"
         },
-    ]
+        {
+            id: "q-4",
+            context: [{ role: "user", content: "What is 2 + 2?" }],
+            expected_answer: "4"
+        },
+        {
+            id: "q-5",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
+        {
+            id: "q-6",
+            context: [{ role: "user", content: "What is 2 + 2?" }],
+            expected_answer: "4"
+        },
+        {
+            id: "q-7",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
+        {
+            id: "q-8",
+            context: [{ role: "user", content: "What is 2 + 2?" }],
+            expected_answer: "4"
+        },
+        {
+            id: "q-9",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
+        {
+            id: "q-10",
+            context: [{ role: "user", content: "What is 2 + 2?" }],
+            expected_answer: "4"
+        },
+        {
+            id: "q-11",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
+        {
+            id: "q-12",
+            context: [{ role: "user", content: "What is 2 + 2?" }],
+            expected_answer: "4"
+        },
+        {
+            id: "q-13",
+            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
+            expected_answer: "blue"
+        },
+    ])
 };
 const benchmark = new Benchmark(config, "benchmark-1", data);
 
-for await (const event of benchmark.run()) {
+for await (const event of benchmark.fakeRun()) {
     switch (event.type) {
         case "progress":
             console.log(`[${event.model}] ${event.questionId} — score: ${event.score}, cost: ${event.cost}, time: ${event.timeMs}ms${event.cached ? " (cached)" : ""}`);

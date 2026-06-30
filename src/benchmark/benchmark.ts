@@ -1,16 +1,20 @@
 import { type Config } from '@/types/config.js'
 import { type Datajson } from '@/types/data.js'
 import { type BenchmarkEvent } from '@/types/benchmark-events.js'
-import { CacheRead, CacheWrite } from './cache.js'
+import { CacheWrite } from './cache.js'
+import type { ModelMessage } from 'ai'
+import { generate } from '@/benchmark/ai.js'
 
-export class Benchmark<TExpectedAnswer, TSchema, TToolSet> {
-    config: Config<TExpectedAnswer, TSchema, TToolSet>
+export class Benchmark<TExpectedAnswer, TSchema> {
+    config: Config<TExpectedAnswer, TSchema>
     id: string
     data: Datajson<TExpectedAnswer>
-    constructor(config: Config<TExpectedAnswer, TSchema, TToolSet>, id: string, data: Datajson<TExpectedAnswer>) {
+    version: string
+    constructor(config: Config<TExpectedAnswer, TSchema>, id: string, data: Datajson<TExpectedAnswer>) {
         this.config = config
         this.id = id
         this.data = data
+        this.version = data.version
     }
     test() {
         console.log("Running benchmark with id:", this.id)
@@ -18,57 +22,76 @@ export class Benchmark<TExpectedAnswer, TSchema, TToolSet> {
         console.log(this.config)
         console.log(this.config.tools)
     }
+    private async evaluateModelAnswer(context: ModelMessage[], expected_answer: TExpectedAnswer, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
+        if (this.config.evaluator_function) {
+            return this.config.evaluator_function(context[context.length-1]?.content as string, expected_answer, model_answer, tool_calls)
+        }
+        return null
+    }
     async *run(): AsyncGenerator<BenchmarkEvent, void, unknown> {
-        let totalCost = 0
-        let totalScore = 0
-        let count = 0
-        const perModel: { model: string, cost: number, avgScore: number, count: number }[] = []
         for (const model of this.config.models) {
-            let modelCost = 0
-            let modelScore = 0
-            let modelCount = 0
-            for (const dataset of this.data.data) {
-                const cached = CacheRead(this.data.id, this.data.version, model.id, dataset.id)
-                if (cached !== null) {
-                    var score = cached.score
-                    modelCost += cached.cost
-                    modelScore += score
-                    modelCount++
-                    totalCost += cached.cost
-                    totalScore += score
-                    count++
-                    yield { type: "progress", model: model.id, questionId: dataset.id, score, cost: cached.cost, timeMs: cached.time, cached: true }
-                    continue
-                }
-                const cost = 0.001
-                const timeMs = 100
-                var score = 10
-                const context = JSON.stringify(dataset.context)
-                const question = dataset.context.find(m => m.role === "user")?.content?.toString() ?? ""
+            for (const question of this.data.data) {
+                const result = await generate(model.model, question.context, this.config.tools, this.config.schema)
+                const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
                 CacheWrite({
                     id: this.id,
                     dataset_id: this.data.id,
-                    dataset_path: this.data.id,
-                    version: this.data.version,
-                    question_id: dataset.id,
-                    question,
-                    answer: "placeholder",
+                    dataset_path: "",
+                    version: this.version,
+                    question_id: question.id,
+                    question: question.context[question.context.length-1]?.content as string,
+                    context: question.context,
+                    answer: result.answer,
                     model: model.id,
-                    cost,
-                    time: timeMs,
-                    context,
-                    score,
+                    cost: result.cost,
+                    time: result.time,
+                    score: score ?? 0,
+                    tools: result.tools || []
                 }, this.config.models.map(m => m.id))
-                modelCost += cost
-                modelScore += score
-                modelCount++
-                totalCost += cost
-                totalScore += score
-                count++
-                yield { type: "progress", model: model.id, questionId: dataset.id, score, cost, timeMs, cached: false }
             }
-            perModel.push({ model: model.id, cost: modelCost, avgScore: modelCount ? modelScore / modelCount : 0, count: modelCount })
         }
-        yield { type: "finish", totalCost, avgScore: count ? totalScore / count : 0, perModel }
+    }
+
+    async *fakeRun(): AsyncGenerator<BenchmarkEvent, void, unknown> {
+        for (const model of this.config.models) {
+            for (const question of this.data.data) {
+                const answer = `${question.context[0]?.content.slice(0, 50)}... (simulated answer)`
+                CacheWrite({
+                    id: this.id,
+                    dataset_id: this.data.id,
+                    dataset_path: "",
+                    version: this.version,
+                    question_id: question.id,
+                    question: question.context[question.context.length-1]?.content as string,
+                    context: question.context,
+                    answer: answer,
+                    model: model.id,
+                    cost: Math.floor(Math.random() * 10),
+                    time: Math.floor(Math.random() * 1000),
+                    score: Math.floor(Math.random() * 100),
+                    tools: []
+                }, this.config.models.map(m => m.id))
+                yield {
+                    type: "progress",
+                    model: model.id,
+                    questionId: question.id,
+                    score: Math.floor(Math.random() * 100),
+                    cost: Math.floor(Math.random() * 10),
+                    timeMs: Math.floor(Math.random() * 1000),
+                    cached: true
+                }
+            }
+        }
+        yield {
+            type: "finish",
+            totalCost: Math.floor(Math.random() * 100),
+            avgScore: Math.floor(Math.random() * 100),
+            perModel: this.config.models.map(m => ({
+                model: m.id,
+                cost: Math.floor(Math.random() * 10),
+                avgScore: Math.floor(Math.random() * 100),
+                count: this.data.data.length
+            }))
+        }
     }
 }

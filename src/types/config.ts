@@ -6,8 +6,15 @@ type Model = {
     api_key: string
 }
 
-export interface Config<TExpectedAnswer, TSchema, TToolSet> {
-    evaluator_models: Model[] | null
+type EvalModel = {
+    id: string
+    model: LanguageModel
+    api_key: string
+    prompt: string
+}
+
+export interface Config<TExpectedAnswer, TSchema> {
+    evaluator_models: EvalModel[] | null
     evaluator_function: (
         question: string,
         expected_answer: TExpectedAnswer,
@@ -15,6 +22,6 @@ export interface Config<TExpectedAnswer, TSchema, TToolSet> {
         tools_calls: string[]
     ) => number | null
     schema: z.ZodType<TSchema>
-    tools: TToolSet
+    tools: ToolSet
     models: Model[]
 }

@@ -1,3 +1,4 @@
+import type { ModelMessage } from "ai"
 
 
 interface CacheFile {
@@ -7,17 +8,19 @@ interface CacheFile {
     models: string[]
     version: string
     answers: CacheAnswer[]
+    // answers: Map<string, CacheAnswer>
 }
 
 interface CacheAnswer {
     question_id: string
     question: string
-    context: string
+    context: ModelMessage[]
     answer: string
     model: string
     cost: number
     time: number
     score: number
+    tools: string[]
 }
 
 interface CacheWriteParams {
@@ -31,8 +34,9 @@ interface CacheWriteParams {
     model: string
     cost: number
     time: number
-    context: string
+    context: ModelMessage[]
     score: number
+    tools?: string[]
 }
 
 export type { CacheFile, CacheAnswer, CacheWriteParams }

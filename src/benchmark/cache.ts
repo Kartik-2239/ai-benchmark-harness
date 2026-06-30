@@ -11,8 +11,8 @@ export function CacheWrite(p: CacheWriteParams, models: string[]): void {
             dataset_id: p.dataset_id,
             dataset_path: p.dataset_path,
             version: p.version,
-            answers: [],
-            models: models
+            models: models,
+            answers: []
         }
     }
     cacheFile.answers.push({
@@ -23,7 +23,8 @@ export function CacheWrite(p: CacheWriteParams, models: string[]): void {
         model: p.model,
         cost: p.cost,
         time: p.time,
-        score: p.score
+        score: p.score,
+        tools: p.tools || []
     })
     fs.writeFileSync(`${PATH}/${p.dataset_id}-${p.version}.json`, JSON.stringify(cacheFile, null, 2))
 }
