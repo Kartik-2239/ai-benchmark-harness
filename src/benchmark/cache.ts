@@ -3,7 +3,7 @@ import fs from "fs"
 
 const PATH = "./cache"
 
-export function CacheWrite(p: CacheWriteParams, models: string[]): void {
+export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>, models: string[]): void {
     let cacheFile = FindCacheFile(p.dataset_id, p.version)
     if (cacheFile === null) {
         cacheFile = {
@@ -20,6 +20,7 @@ export function CacheWrite(p: CacheWriteParams, models: string[]): void {
         question_id: p.question_id,
         question: p.question,
         context: p.context,
+        expected_answer: p.expected_answer,
         answer: p.answer,
         model: p.model,
         cost: p.cost,

@@ -1,6 +1,7 @@
 import { Output, type LanguageModel, type ToolSet } from "ai";
 import { z } from "zod";
-type Model = {
+
+export type Model = {
     id: string
     model: LanguageModel
     api_key: string

@@ -1,11 +1,12 @@
-import type { Config } from "./types/config.js";
+import type { Config, Model } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
 import type { Datajson } from "./types/data.js";
 import type { CacheFile } from "./types/cache.js";
 import { type LanguageModel, type ToolSet } from "ai";
-import { z } from "zod";
+import { unknown, z } from "zod";
 import fs from "fs";
 import run from "./tui/tui.js";
+import { createOpenRouter, openrouter } from "@openrouter/ai-sdk-provider";
 
 type ExpectedAnswer = string
 
@@ -34,14 +35,25 @@ function generate_random_model() {
     return p1 + "-" + p2
 }
 
-const models = []
-for (let i = 0; i < 10; i++) {
-    models.push({
-        id: generate_random_model(),
-        model: null as unknown as LanguageModel,
-        api_key: "placeholder"
-    })
-}
+const models: Model[]  = [
+    {
+        id: "minimax/minimax-m3",
+        model: openrouter("minimax/minimax-m3"),
+        api_key: process.env.OPENROUTER_API_KEY || ""
+    },
+    {
+        id: "google/gemini-3.1-flash-lite",
+        model: openrouter("google/gemini-3.1-flash-lite"),
+        api_key: process.env.OPENROUTER_API_KEY || ""
+    },
+]
+// for (let i = 0; i < 10; i++) {
+//     models.push({
+//         id: generate_random_model(),
+//         model: unknown as unknown as LanguageModel,
+//         api_key: "placeholder"
+//     })
+// }
 
 const config: Config<ExpectedAnswer, Schema> = {
     evaluator_models: null,
@@ -80,52 +92,12 @@ const data: Datajson<ExpectedAnswer> = {
             id: "q-5",
             context: [{ role: "user", content: "What color is the sky on a clear day?" }],
             expected_answer: "blue"
-        },
-        {
-            id: "q-6",
-            context: [{ role: "user", content: "What is 2 + 2?" }],
-            expected_answer: "4"
-        },
-        {
-            id: "q-7",
-            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
-            expected_answer: "blue"
-        },
-        {
-            id: "q-8",
-            context: [{ role: "user", content: "What is 2 + 2?" }],
-            expected_answer: "4"
-        },
-        {
-            id: "q-9",
-            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
-            expected_answer: "blue"
-        },
-        {
-            id: "q-10",
-            context: [{ role: "user", content: "What is 2 + 2?" }],
-            expected_answer: "4"
-        },
-        {
-            id: "q-11",
-            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
-            expected_answer: "blue"
-        },
-        {
-            id: "q-12",
-            context: [{ role: "user", content: "What is 2 + 2?" }],
-            expected_answer: "4"
-        },
-        {
-            id: "q-13",
-            context: [{ role: "user", content: "What color is the sky on a clear day?" }],
-            expected_answer: "blue"
-        },
+        }
     ])
 };
 const benchmark = new Benchmark(config, "benchmark-1", data);
 
-for await (const event of benchmark.fakeRun()) {
+for await (const event of benchmark.run()) {
     switch (event.type) {
         case "progress":
             console.log(`[${event.model}] ${event.questionId} — score: ${event.score}, cost: ${event.cost}, time: ${event.timeMs}ms${event.cached ? " (cached)" : ""}`);

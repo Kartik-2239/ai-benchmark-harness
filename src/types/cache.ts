@@ -16,6 +16,7 @@ interface CacheAnswer {
     question_id: string
     question: string
     context: ModelMessage[]
+    expected_answer: string
     answer: string
     model: string
     cost: number
@@ -32,6 +33,7 @@ interface CacheWriteParams {
     version: string
     question_id: string
     question: string
+    expected_answer: string
     answer: string
     model: string
     cost: number

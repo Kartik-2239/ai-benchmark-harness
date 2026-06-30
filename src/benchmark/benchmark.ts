@@ -33,11 +33,12 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             for (const question of this.data.data) {
                 const result = await generate(model.model, question.context, this.config.tools, this.config.schema)
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
-                CacheWrite({
+                CacheWrite<TExpectedAnswer>({
                     id: this.id,
                     name: this.data.name,
                     dataset_id: this.data.id,
                     dataset_path: "",
+                    expected_answer: question.expected_answer,
                     version: this.version,
                     question_id: question.id,
                     question: question.context[question.context.length-1]?.content as string,
@@ -49,7 +50,27 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                     score: score ?? 0,
                     tools: result.tools || []
                 }, this.config.models.map(m => m.id))
+                yield {
+                    type: "progress",
+                    model: model.id,
+                    questionId: question.id,
+                    score: Math.floor(Math.random() * 100),
+                    cost: Math.floor(Math.random() * 10),
+                    timeMs: Math.floor(Math.random() * 1000),
+                    cached: true
+                }
             }
+        }
+        yield {
+            type: "finish",
+            totalCost: Math.floor(Math.random() * 100),
+            avgScore: Math.floor(Math.random() * 100),
+            perModel: this.config.models.map(m => ({
+                model: m.id,
+                cost: Math.floor(Math.random() * 10),
+                avgScore: Math.floor(Math.random() * 100),
+                count: this.data.data.length
+            }))
         }
     }
 
@@ -57,10 +78,11 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         for (const model of this.config.models) {
             for (const question of this.data.data) {
                 const answer = `${question.context[0]?.content.slice(0, 50)}... (simulated answer)`
-                CacheWrite({
+                CacheWrite<TExpectedAnswer>({
                     id: this.id,
                     dataset_id: this.data.id,
                     name: this.data.name,
+                    expected_answer: question.expected_answer,
                     dataset_path: "",
                     version: this.version,
                     question_id: question.id,
