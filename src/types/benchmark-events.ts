@@ -22,4 +22,8 @@ type finish = {
     perModel: { model: string, cost: number, avgScore: number, count: number }[]
 }
 
+type BenchmarkStatus = {
+    
+}
+
 export type BenchmarkEvent = progress | error | finish

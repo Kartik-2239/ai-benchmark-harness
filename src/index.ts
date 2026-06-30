@@ -1,8 +1,11 @@
 import type { Config } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
 import type { Datajson } from "./types/data.js";
+import type { CacheFile } from "./types/cache.js";
 import { type LanguageModel, type ToolSet } from "ai";
 import { z } from "zod";
+import fs from "fs";
+import run from "./tui/tui.js";
 
 type ExpectedAnswer = string
 
@@ -18,14 +21,33 @@ function evaluatorFunction(question: string, expected_answer: ExpectedAnswer, mo
     return null
 }
 
+function generate_random_model() {
+    const s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    const num = "0123456789"
+
+    let p1 = ""
+    for (let i = 0; i < 5; i++) {
+        p1 += s[Math.floor(Math.random() * s.length)] || ""
+    }
+    const p2 = s[Math.floor(Math.random() * s.length)] || ""
+
+    return p1 + "-" + p2
+}
+
+const models = []
+for (let i = 0; i < 10; i++) {
+    models.push({
+        id: generate_random_model(),
+        model: null as unknown as LanguageModel,
+        api_key: "placeholder"
+    })
+}
+
 const config: Config<ExpectedAnswer, Schema> = {
     evaluator_models: null,
     evaluator_function: evaluatorFunction,
     schema: schema,
-    models: [
-        { id: "openai-gpt-4o", model: null as unknown as LanguageModel, api_key: "placeholder" },
-        { id: "anthropic-claude-3.5-sonnet", model: null as unknown as LanguageModel, api_key: "placeholder" },
-    ],
+    models: models,
     tools: {} as ToolSet,
 }
 const data: Datajson<ExpectedAnswer> = {
@@ -119,3 +141,6 @@ for await (const event of benchmark.fakeRun()) {
             break;
     }
 }
+
+const cacheFile = JSON.parse(fs.readFileSync("cache/test-dataset-1.json", "utf8")) as CacheFile
+run(cacheFile, data)

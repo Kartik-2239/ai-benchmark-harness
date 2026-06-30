@@ -35,6 +35,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
                 CacheWrite({
                     id: this.id,
+                    name: this.data.name,
                     dataset_id: this.data.id,
                     dataset_path: "",
                     version: this.version,
@@ -59,6 +60,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                 CacheWrite({
                     id: this.id,
                     dataset_id: this.data.id,
+                    name: this.data.name,
                     dataset_path: "",
                     version: this.version,
                     question_id: question.id,
@@ -66,7 +68,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                     context: question.context,
                     answer: answer,
                     model: model.id,
-                    cost: Math.floor(Math.random() * 10),
+                    cost: parseFloat((Math.random()).toFixed(2)),
                     time: Math.floor(Math.random() * 1000),
                     score: Math.floor(Math.random() * 100),
                     tools: []

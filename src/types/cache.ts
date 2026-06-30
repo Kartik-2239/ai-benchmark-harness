@@ -3,6 +3,7 @@ import type { ModelMessage } from "ai"
 
 interface CacheFile {
     id: string
+    name: string
     dataset_id: string
     dataset_path: string
     models: string[]
@@ -24,8 +25,9 @@ interface CacheAnswer {
 }
 
 interface CacheWriteParams {
-    id: string
-    dataset_id: string
+    id: string // cache benchmark id
+    dataset_id: string // questions/data id
+    name: string
     dataset_path: string
     version: string
     question_id: string

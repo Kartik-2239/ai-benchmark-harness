@@ -7,6 +7,7 @@ export function CacheWrite(p: CacheWriteParams, models: string[]): void {
     let cacheFile = FindCacheFile(p.dataset_id, p.version)
     if (cacheFile === null) {
         cacheFile = {
+            name: p.name,
             id: p.id,
             dataset_id: p.dataset_id,
             dataset_path: p.dataset_path,
