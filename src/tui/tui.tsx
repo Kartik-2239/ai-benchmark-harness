@@ -21,6 +21,9 @@ interface ModelRow {
 
 function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): ModelRow[] {
   const byModel = new Map<string, ModelRow>()
+  for (const model of cacheFile.models) {
+    byModel.set(model, { model, count: 0, totalCost: 0, totalTime: 0, totalScore: 0 })
+  }
   for (const a of cacheFile.answers) {
     let row = byModel.get(a.model)
     if (!row) {

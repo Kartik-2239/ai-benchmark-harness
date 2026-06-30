@@ -8,6 +8,8 @@ import { render } from 'ink'
 import type { CacheFile } from '@/types/cache.js'
 import { TableProvider } from '@/tui/tui.js'
 import React from 'react'
+import dotenv from 'dotenv'
+dotenv.config()
 
 export class Benchmark<TExpectedAnswer, TSchema> {
     config: Config<TExpectedAnswer, TSchema>
