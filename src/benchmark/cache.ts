@@ -31,17 +31,17 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
     fs.writeFileSync(`${PATH}/${p.dataset_id}-${p.version}.json`, JSON.stringify(cacheFile, null, 2))
 }
 
-export function CacheRead(dataset_id: string, version: string, model: string, question_id: string): CacheAnswer | null {
-    const cacheFile = FindCacheFile(dataset_id, version)
+export function CacheRead<TExpectedAnswer>(dataset_id: string, version: string, model: string, question_id: string): CacheAnswer<TExpectedAnswer> | null {
+    const cacheFile = FindCacheFile<TExpectedAnswer>(dataset_id, version)
     if (cacheFile === null) return null
     return cacheFile.answers.find(a => a.model === model && a.question_id === question_id) ?? null
 }
 
-function FindCacheFile(dataset_id: string, version: string): CacheFile | null {
+export function FindCacheFile<TExpectedAnswer>(dataset_id: string, version: string): CacheFile<TExpectedAnswer> | null {
     const filePath = `${PATH}/${dataset_id}-${version}.json`
     if (fs.existsSync(filePath)) {
         const fileContent = fs.readFileSync(filePath, "utf-8")
-        return JSON.parse(fileContent) as CacheFile
+        return JSON.parse(fileContent) as CacheFile<TExpectedAnswer>
     }
     return null
 }

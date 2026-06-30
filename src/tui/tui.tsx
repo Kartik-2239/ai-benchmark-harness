@@ -19,7 +19,7 @@ interface ModelRow {
   totalScore: number
 }
 
-function aggregate(cacheFile: CacheFile): ModelRow[] {
+function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): ModelRow[] {
   const byModel = new Map<string, ModelRow>()
   for (const a of cacheFile.answers) {
     let row = byModel.get(a.model)
@@ -35,7 +35,7 @@ function aggregate(cacheFile: CacheFile): ModelRow[] {
   return [...byModel.values()]
 }
 
-export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; data: Datajson<T> }) => {
+export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile: CacheFile<TExpectedAnswer>; data: Datajson<TExpectedAnswer> }) => {
   const total = data.data.length
   const rows = aggregate(cacheFile)
   const done = rows.filter(r => r.count >= total).length
@@ -84,7 +84,7 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
   )
 }
 
-function run<T>(cacheFile: CacheFile, data: Datajson<T>) {
+function run<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>, data: Datajson<TExpectedAnswer>) {
   render(<TableProvider cacheFile={cacheFile} data={data} />)
 }
 export default run

@@ -1,22 +1,22 @@
 import type { ModelMessage } from "ai"
 
 
-interface CacheFile {
+interface CacheFile<TExpectedAnswer> {
     id: string
     name: string
     dataset_id: string
     dataset_path: string
     models: string[]
     version: string
-    answers: CacheAnswer[]
+    answers: CacheAnswer<TExpectedAnswer>[]
     // answers: Map<string, CacheAnswer>
 }
 
-interface CacheAnswer {
+interface CacheAnswer<TExpectedAnswer> {
     question_id: string
     question: string
     context: ModelMessage[]
-    expected_answer: string
+    expected_answer: TExpectedAnswer
     answer: string
     model: string
     cost: number
@@ -25,7 +25,7 @@ interface CacheAnswer {
     tools: string[]
 }
 
-interface CacheWriteParams {
+interface CacheWriteParams<TExpectedAnswer> {
     id: string // cache benchmark id
     dataset_id: string // questions/data id
     name: string
@@ -33,7 +33,7 @@ interface CacheWriteParams {
     version: string
     question_id: string
     question: string
-    expected_answer: string
+    expected_answer: TExpectedAnswer
     answer: string
     model: string
     cost: number
