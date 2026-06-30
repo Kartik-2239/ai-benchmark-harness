@@ -42,7 +42,6 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
   const allAnswers = rows.reduce((s, r) => s + r.count, 0)
   const allCost = rows.reduce((s, r) => s + r.totalCost, 0)
   const allTime = rows.reduce((s, r) => s + r.totalTime, 0)
-  const allScore = rows.reduce((s, r) => s + r.totalScore, 0)
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -53,7 +52,7 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
       <Box>
         <Col align="flex-start" width={24}>Model</Col>
         <Col width={12}>Progress</Col>
-        <Col width={10}>Avg Score</Col>
+        <Col width={10}>Score</Col>
         <Col width={12}>Cost</Col>
         <Col width={10}>Time</Col>
       </Box>
@@ -65,8 +64,8 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
           <Box key={r.model}>
             <Col align="flex-start" width={24} color={complete ? 'white' : 'yellow'}>{r.model}</Col>
             <Col width={12} color={complete ? 'green' : 'yellow'}>{r.count}/{total}</Col>
-            <Col width={10}>{avg.toFixed(1)}</Col>
-            <Col color="cyan" width={12}>${r.totalCost.toFixed(2)}</Col>
+            <Col width={10}>{r.totalScore}</Col>
+            <Col color="cyan" width={12}>${r.totalCost.toFixed(4)}</Col>
             <Col width={10}>{(r.totalTime / 1000).toFixed(1)}s</Col>
           </Box>
         )
@@ -78,7 +77,7 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
         <Col width={10}>{allAnswers ? (allScore / allAnswers).toFixed(1) : '0.0'}</Col> */}
         <Col color="cyan" width={12}>-</Col>
         <Col width={10}>-</Col>
-        <Col color="cyan" width={12}>${allCost.toFixed(2)}</Col>
+        <Col color="cyan" width={12}>${allCost.toFixed(4)}</Col>
         <Col width={10}>{(allTime / 1000).toFixed(1)}s</Col>
       </Box>
     </Box>
@@ -88,5 +87,4 @@ export const TableProvider = <T,>({ cacheFile, data }: { cacheFile: CacheFile; d
 function run<T>(cacheFile: CacheFile, data: Datajson<T>) {
   render(<TableProvider cacheFile={cacheFile} data={data} />)
 }
-
 export default run

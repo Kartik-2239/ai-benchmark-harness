@@ -16,12 +16,6 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         this.data = data
         this.version = data.version
     }
-    test() {
-        console.log("Running benchmark with id:", this.id)
-        console.log(this.data)
-        console.log(this.config)
-        console.log(this.config.tools)
-    }
     private async evaluateModelAnswer(context: ModelMessage[], expected_answer: TExpectedAnswer, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
         if (this.config.evaluator_function) {
             return this.config.evaluator_function(context[context.length-1]?.content as string, expected_answer, model_answer, tool_calls)
@@ -29,9 +23,15 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         return null
     }
     async *run(): AsyncGenerator<BenchmarkEvent, void, unknown> {
+        var final: BenchmarkEvent = {
+            type: "finish",
+            totalCost: 0,
+            avgScore: 0,
+            perModel: []
+        }
         for (const model of this.config.models) {
             for (const question of this.data.data) {
-                const result = await generate(model.model, question.context, this.config.tools, this.config.schema)
+                const result = await generate(model.model, question.context, question.tools, this.config.schema)
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
                 CacheWrite<TExpectedAnswer>({
                     id: this.id,
@@ -50,13 +50,31 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                     score: score ?? 0,
                     tools: result.tools || []
                 }, this.config.models.map(m => m.id))
+
+                final.totalCost += result.cost
+                const model_data = final.perModel.find(m => m.model === model.id)
+                final.avgScore += (score ?? 0) / (this.data.data.length * this.config.models.length)
+                if (model_data) {
+                    model_data.cost += result.cost
+                    model_data.avgScore += score ?? 0
+                    model_data.count++
+                    final.perModel = final.perModel.map(m => m.model === model.id ? model_data : m)
+                }else {
+                    final.perModel.push({
+                        model: model.id,
+                        cost: result.cost,
+                        avgScore: score ?? 0,
+                        count: 1
+                    })
+                }
+                
                 yield {
                     type: "progress",
                     model: model.id,
                     questionId: question.id,
-                    score: Math.floor(Math.random() * 100),
-                    cost: Math.floor(Math.random() * 10),
-                    timeMs: Math.floor(Math.random() * 1000),
+                    score: score ?? 0,
+                    cost: result.cost,
+                    timeMs: result.time,
                     cached: true
                 }
             }

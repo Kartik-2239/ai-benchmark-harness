@@ -1,4 +1,4 @@
-import { type ModelMessage } from "ai"
+import { type ModelMessage, type ToolSet } from "ai"
 
 export interface Datajson<TExpectedAnswer> {
     id: string
@@ -13,4 +13,6 @@ interface Dataset<TExpectedAnswer> {
     id: string
     context: ModelMessage[]
     expected_answer: TExpectedAnswer
+    tools?: ToolSet
+    // allowed tools
 }

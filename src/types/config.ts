@@ -23,6 +23,6 @@ export interface Config<TExpectedAnswer, TSchema> {
         tools_calls: string[]
     ) => number | null
     schema: z.ZodType<TSchema>
-    tools: ToolSet
+    // tools: ToolSet
     models: Model[]
 }

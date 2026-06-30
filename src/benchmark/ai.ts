@@ -12,23 +12,31 @@ export interface GenerateResult<TSchema> {
 export async function generate<TSchema>(
     model: LanguageModel,
     messages: ModelMessage[],
-    tools: ToolSet,
+    tools: ToolSet | undefined,
     schema: z.ZodType<TSchema>,
 ): Promise<GenerateResult<TSchema>> {
     const start = performance.now()
+    if (tools === undefined) {
+        tools = {} as ToolSet
+    }
+
     const result = await generateText({
         model,
         messages,
-        tools,
+        tools: tools,
         output: Output.object({ schema }),
     })
+
     const time = Math.round(performance.now() - start)
+    const dollars = (result.finalStep.providerMetadata?.openrouter?.usage as any)?.cost
     const cost = (result.usage.inputTokens ?? 0) + (result.usage.outputTokens ?? 0)
     return {
-        answer: result.text,
+        answer: result.text ? result.text : "",
         schema: result.output,
-        cost,
+        cost: dollars ? parseFloat(dollars) : cost,
         time,
         tools: result.toolCalls.map(tc => tc.toolName),
     }
+
+   
 }
