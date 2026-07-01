@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, render, Text } from 'ink'
 import type { CacheFile } from '@/types/cache.js'
-import type { Datajson } from '@/types/data.js'
+import type { BenchmarkDataset } from '@/types/data.js'
 
 type Color = 'cyan' | 'green' | 'red' | 'yellow' | 'gray' | 'white'
 
@@ -50,7 +50,7 @@ function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): Mode
 /**
  * Renders the benchmark progress table for all configured models.
  */
-export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile: CacheFile<TExpectedAnswer>; data: Datajson<TExpectedAnswer> }) => {
+export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile: CacheFile<TExpectedAnswer>; data: BenchmarkDataset<TExpectedAnswer> }) => {
   const total = data.data.length
   const rows = aggregate(cacheFile)
   const done = rows.filter(r => r.count >= total).length
@@ -104,7 +104,7 @@ export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile
  * @param cacheFile - The cache file to display.
  * @param data - The dataset used to compute progress totals.
  */
-function run<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>, data: Datajson<TExpectedAnswer>) {
+function run<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>, data: BenchmarkDataset<TExpectedAnswer>) {
   render(<TableProvider cacheFile={cacheFile} data={data} />)
 }
 export default run

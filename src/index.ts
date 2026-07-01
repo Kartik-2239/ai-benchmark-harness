@@ -1,6 +1,6 @@
 import type { Config, Model } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
-import type { Datajson } from "./types/data.js";
+import type { BenchmarkDataset } from "./types/data.js";
 import { type LanguageModel, type ToolSet, tool } from "ai";
 import { z } from "zod";
 import { openrouter } from "@openrouter/ai-sdk-provider";
@@ -26,7 +26,7 @@ const models: Model[]  = [
 ]
 
 const date = new Date()
-const data: Datajson<ExpectedAnswer> = {
+const data: BenchmarkDataset<ExpectedAnswer> = {
     id: date.getTime().toString(),
     name: "Test Dataset",
     description: "Placeholder dataset for simulating a benchmark run without AI.",

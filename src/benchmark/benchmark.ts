@@ -1,5 +1,5 @@
 import { type Config } from '@/types/config.js'
-import { type Datajson } from '@/types/data.js'
+import { type BenchmarkDataset } from '@/types/data.js'
 import { type BenchmarkEvent } from '@/types/benchmark-events.js'
 import { CacheWrite } from './cache.js'
 import type { ModelMessage } from 'ai'
@@ -18,7 +18,7 @@ dotenv.config()
 export class Benchmark<TExpectedAnswer, TSchema> {
     config: Config<TExpectedAnswer, TSchema>
     id: string
-    data: Datajson<TExpectedAnswer>
+    data: BenchmarkDataset<TExpectedAnswer>
     version: string
     private last: Instance | undefined
     private cacheFile: CacheFile<TExpectedAnswer> | undefined
@@ -27,9 +27,9 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * Creates a new benchmark instance.
      * @param config - Benchmark configuration, including models and evaluator.
      * @param id - Unique benchmark identifier.
-     * @param data - Dataset containing questions and expected answers.
+     * @param data - Benchmark dataset containing questions and expected answers.
      */
-    constructor(config: Config<TExpectedAnswer, TSchema>, id: string, data: Datajson<TExpectedAnswer>) {
+    constructor(config: Config<TExpectedAnswer, TSchema>, id: string, data: BenchmarkDataset<TExpectedAnswer>) {
         this.config = config
         this.id = id
         this.data = data

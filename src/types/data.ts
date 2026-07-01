@@ -1,15 +1,15 @@
 import { type ModelMessage, type ToolSet } from "ai"
 
-export interface Datajson<TExpectedAnswer> {
+export interface BenchmarkDataset<TExpectedAnswer> {
     id: string
     name: string
     description: string
     version: string
-    data: Dataset<TExpectedAnswer>[]
+    data: BenchmarkQuestion<TExpectedAnswer>[]
 }
 
 
-interface Dataset<TExpectedAnswer> {
+interface BenchmarkQuestion<TExpectedAnswer> {
     id: string
     context: ModelMessage[]
     expected_answer: TExpectedAnswer
