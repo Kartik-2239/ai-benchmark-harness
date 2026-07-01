@@ -1,0 +1,4 @@
+- [ ] make the benchmark tui look good with a bunch of states
+- [ ] fix the ids of dataset, answers and the save file name unify them
+- [ ] error handling
+- [ ] Make documentation for clankers

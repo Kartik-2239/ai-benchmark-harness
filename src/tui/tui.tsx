@@ -5,6 +5,9 @@ import type { Datajson } from '@/types/data.js'
 
 type Color = 'cyan' | 'green' | 'red' | 'yellow' | 'gray' | 'white'
 
+/**
+ * A single table column cell that aligns text and applies an optional color.
+ */
 const Col = ({ children, width, align, color }: { children: React.ReactNode; width?: number; align?: 'flex-start' | 'center' | 'flex-end'; color?: Color }) => (
   <Box width={width} flexGrow={width ? 0 : 1} paddingRight={2} justifyContent={align ?? 'center'}>
     <Text wrap="truncate-end" color={color ?? 'white'}>{children}</Text>
@@ -19,6 +22,12 @@ interface ModelRow {
   totalScore: number
 }
 
+/**
+ * Aggregates per-model progress, cost, time, and score from the cache file.
+ * Models with no answers are included with zeroed values.
+ * @param cacheFile - The cache file containing answers and model list.
+ * @returns An array of rows, one per model.
+ */
 function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): ModelRow[] {
   const byModel = new Map<string, ModelRow>()
   for (const model of cacheFile.models) {
@@ -38,6 +47,9 @@ function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): Mode
   return [...byModel.values()]
 }
 
+/**
+ * Renders the benchmark progress table for all configured models.
+ */
 export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile: CacheFile<TExpectedAnswer>; data: Datajson<TExpectedAnswer> }) => {
   const total = data.data.length
   const rows = aggregate(cacheFile)
@@ -87,6 +99,11 @@ export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile
   )
 }
 
+/**
+ * Renders the benchmark TUI for the given cache file and dataset.
+ * @param cacheFile - The cache file to display.
+ * @param data - The dataset used to compute progress totals.
+ */
 function run<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>, data: Datajson<TExpectedAnswer>) {
   render(<TableProvider cacheFile={cacheFile} data={data} />)
 }

@@ -4,32 +4,55 @@ import { type BenchmarkEvent } from '@/types/benchmark-events.js'
 import { CacheWrite } from './cache.js'
 import type { ModelMessage } from 'ai'
 import { generate } from '@/benchmark/ai.js'
-import { render } from 'ink'
+import { render, type Instance } from 'ink'
 import type { CacheFile } from '@/types/cache.js'
 import { TableProvider } from '@/tui/tui.js'
 import React from 'react'
 import dotenv from 'dotenv'
 dotenv.config()
 
+/**
+ * Orchestrates running a benchmark across configured models and dataset questions,
+ * caching results and rendering progress to the terminal.
+ */
 export class Benchmark<TExpectedAnswer, TSchema> {
     config: Config<TExpectedAnswer, TSchema>
     id: string
     data: Datajson<TExpectedAnswer>
     version: string
-    private last: ReturnType<typeof render> | undefined
+    private last: Instance | undefined
     private cacheFile: CacheFile<TExpectedAnswer> | undefined
+
+    /**
+     * Creates a new benchmark instance.
+     * @param config - Benchmark configuration, including models and evaluator.
+     * @param id - Unique benchmark identifier.
+     * @param data - Dataset containing questions and expected answers.
+     */
     constructor(config: Config<TExpectedAnswer, TSchema>, id: string, data: Datajson<TExpectedAnswer>) {
         this.config = config
         this.id = id
         this.data = data
         this.version = data.version
     }
+    /**
+     * Evaluates a model's answer for a single question.
+     * @param context - The conversation context for the question.
+     * @param expected_answer - The expected answer.
+     * @param model_answer - The parsed model answer.
+     * @param tool_calls - Names of tools invoked by the model.
+     * @returns A numeric score, or null if no evaluator is configured.
+     */
     private async evaluateModelAnswer(context: ModelMessage[], expected_answer: TExpectedAnswer, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
         if (this.config.evaluator_function) {
             return this.config.evaluator_function(context[context.length-1]?.content as string, expected_answer, model_answer, tool_calls)
         }
         return null
     }
+    /**
+     * Runs the benchmark to completion and logs any errors emitted by the runner.
+     * @returns A promise that resolves when the benchmark finishes.
+     */
     async run(): Promise<void> {
         for await (const event of this.runner()) {
             switch (event.type) {
@@ -43,6 +66,10 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             }
         }
     }
+    /**
+     * Generator that iterates over every model/question pair, yielding progress,
+     * errors, and a final summary event.
+     */
     async *runner(): AsyncGenerator<BenchmarkEvent, void, unknown> {
         var final: BenchmarkEvent = {
             type: "finish",
@@ -115,6 +142,9 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             }))
         }
     }
+    /**
+     * Renders or re-renders the benchmark progress table in the terminal.
+     */
     private render(): void {
         if (!this.cacheFile) {
             this.cacheFile = {

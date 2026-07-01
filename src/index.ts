@@ -1,15 +1,9 @@
 import type { Config, Model } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
 import type { Datajson } from "./types/data.js";
-import type { CacheFile } from "./types/cache.js";
 import { type LanguageModel, type ToolSet, tool } from "ai";
-import { set, z } from "zod";
-import fs from "fs";
-import run, { TableProvider } from "./tui/tui.js";
-import { createOpenRouter, openrouter } from "@openrouter/ai-sdk-provider";
-import { render } from "ink";
-import React from "react";
-import { FindCacheFile } from "./benchmark/cache.js";
+import { z } from "zod";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 
 
 
@@ -20,8 +14,13 @@ const models: Model[]  = [
         api_key: process.env.OPENROUTER_API_KEY || ""
     },
     {
-        id: "nvidia/nemotron-3-ultra-550b-a55b:free",
-        model: openrouter("nvidia/nemotron-3-ultra-550b-a55b:free"),
+        id: "deepseek/deepseek-v4-flash",
+        model: openrouter("deepseek/deepseek-v4-flash"),
+        api_key: process.env.OPENROUTER_API_KEY || ""
+    },
+    {
+        id: "qwen/qwen3.7-plus",
+        model: openrouter("qwen/qwen3.7-plus"),
         api_key: process.env.OPENROUTER_API_KEY || ""
     },
 ]
@@ -55,6 +54,7 @@ const schema = z.object({
 
 })
 type Schema = z.infer<typeof schema>;
+
 
 function evaluatorFunction(
     question: string, 

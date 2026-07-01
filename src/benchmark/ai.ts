@@ -9,6 +9,14 @@ export interface GenerateResult<TSchema> {
     tools: string[]
 }
 
+/**
+ * Generates a structured response from a language model.
+ * @param model - The language model to use.
+ * @param messages - The conversation messages to send.
+ * @param tools - Optional tools available to the model.
+ * @param schema - The Zod schema the output must conform to.
+ * @returns The generated answer, parsed schema, cost, time, and tool calls.
+ */
 export async function generate<TSchema>(
     model: LanguageModel,
     messages: ModelMessage[],
