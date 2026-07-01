@@ -5,6 +5,7 @@ export interface GenerateResult<TSchema> {
     answer: string
     schema: TSchema
     cost: number
+    output_tokens: number
     time: number
     tools: string[]
 }
@@ -38,15 +39,14 @@ export async function generate<TSchema>(
     })
 
     const time = Math.round(performance.now() - start)
-    const dollars = (result.finalStep.providerMetadata?.openrouter?.usage as any)?.cost
-    const cost = (result.usage.inputTokens ?? 0) + (result.usage.outputTokens ?? 0)
+    const cost = (result.finalStep.providerMetadata?.openrouter?.usage as any)?.cost
+    const output_tokens = result.usage.outputTokens ? result.usage.outputTokens : 0
     return {
         answer: result.text ? result.text : "",
         schema: result.output,
-        cost: dollars ? parseFloat(dollars) : cost,
+        cost: cost ? parseFloat(cost) : 0,
+        output_tokens,
         time,
         tools: result.toolCalls.map(tc => tc.toolName),
     }
-
-   
 }

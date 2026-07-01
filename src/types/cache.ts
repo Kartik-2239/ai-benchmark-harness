@@ -18,8 +18,10 @@ interface CacheAnswer<TExpectedAnswer> {
     context: ModelMessage[]
     expected_answer: TExpectedAnswer
     answer: string
+    success: boolean
     model: string
     cost: number
+    output_tokens: number
     time_taken: number
     time_stamp: number
     score: number
@@ -36,8 +38,10 @@ interface CacheWriteParams<TExpectedAnswer> {
     question: string
     expected_answer: TExpectedAnswer
     answer: string
+    success: boolean
     model: string
     cost: number
+    output_tokens: number
     time: number
     context: ModelMessage[]
     score: number

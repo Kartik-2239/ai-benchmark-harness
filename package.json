@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "dev": "tsx src/index.ts"
   },
   "module": "NodeNext",
@@ -20,6 +20,7 @@
     "@types/react": "^19.2.17",
     "eslint": "^10.6.0",
     "prettier": "^3.9.0",
+    "tsc-alias": "^1.8.17",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0"

@@ -9,7 +9,9 @@ import type { CacheFile } from '@/types/cache.js'
 import { TableProvider } from '@/tui/tui.js'
 import React from 'react'
 import dotenv from 'dotenv'
-dotenv.config()
+dotenv.config({
+    quiet: true
+})
 
 /**
  * Orchestrates running a benchmark across configured models and dataset questions,
@@ -64,6 +66,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         process.on("SIGINT", shutdown);
         process.on("SIGTERM", shutdown);
         for await (const event of this.runner()) {
+            this.render()
             switch (event.type) {
                 case "progress":
                     break;
@@ -92,38 +95,67 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                 if (this.cacheFile && check_exists(this.cacheFile, model.id, question.id)) {
                     continue
                 }
-                const sys_prompt = question.system_prompt ? question.system_prompt : this.config.system_prompt
-                const result = await generate(model.model, question.context, question.tools, this.config.schema, sys_prompt)
-                const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
-                const to_save = CacheWrite<TExpectedAnswer>({
-                    id: this.id,
-                    dataset_name: this.data.name,
-                    dataset_id: this.data.id,
-                    dataset_path: "",
-                    expected_answer: question.expected_answer,
-                    version: this.version,
-                    question_id: question.id,
-                    question: question.context[question.context.length-1]?.content as string,
-                    context: question.context,
-                    answer: result.answer,
-                    model: model.id,
-                    cost: result.cost,
-                    time: result.time,
-                    score: score ?? 0,
-                    tools: result.tools || []
-                }, this.config.models.map(m => m.id))
-                
-                yield {
-                    type: "progress",
-                    model: model.id,
-                    questionId: question.id,
-                    score: score ?? 0,
-                    cost: result.cost,
-                    timeMs: result.time,
-                    cached: true
+                try{
+                    const sys_prompt = question.system_prompt ? question.system_prompt : this.config.system_prompt
+                    const result = await generate(model.model, question.context, question.tools, this.config.schema, sys_prompt)
+                    const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
+                    const to_save = CacheWrite<TExpectedAnswer>({
+                        id: this.id,
+                        dataset_name: this.data.name,
+                        dataset_id: this.data.id,
+                        dataset_path: "",
+                        expected_answer: question.expected_answer,
+                        version: this.version,
+                        question_id: question.id,
+                        question: question.context[question.context.length-1]?.content as string,
+                        context: question.context,
+                        answer: result.answer,
+                        success: true,
+                        model: model.id,
+                        cost: result.cost,
+                        output_tokens: result.output_tokens || 0,
+                        time: result.time,
+                        score: score ?? 0,
+                        tools: result.tools || []
+                    }, this.config.models.map(m => m.id))
+                    
+                    yield {
+                        type: "progress",
+                        model: model.id,
+                        questionId: question.id,
+                        score: score ?? 0,
+                        cost: result.cost,
+                        timeMs: result.time,
+                        cached: true
+                    }
+                    this.cacheFile = to_save
+                }catch(e){
+                    CacheWrite<TExpectedAnswer>({
+                        id: this.id,
+                        dataset_name: this.data.name,
+                        dataset_id: this.data.id,
+                        dataset_path: "",
+                        expected_answer: question.expected_answer,
+                        version: this.version,
+                        question_id: question.id,
+                        question: question.context[question.context.length-1]?.content as string,
+                        context: question.context,
+                        answer: "",
+                        success: false,
+                        model: model.id,
+                        output_tokens: 0,
+                        cost: 0,
+                        time: 0,
+                        score: 0,
+                        tools: []
+                    }, this.config.models.map(m => m.id))
+                    yield {
+                        type: "error",
+                        model: model.id,
+                        questionId: question.id,
+                        message: (e as Error).message
+                    }
                 }
-                this.cacheFile = to_save
-                this.render()
             }
         }
         yield {

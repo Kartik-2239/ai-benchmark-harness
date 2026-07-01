@@ -29,9 +29,11 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
         context: p.context,
         expected_answer: p.expected_answer,
         answer: p.answer,
+        success: p.success,
         model: p.model,
         cost: p.cost,
         time_taken: p.time,
+        output_tokens: p.output_tokens || 0,
         time_stamp: Date.now(),
         score: p.score,
         tools: p.tools || []
