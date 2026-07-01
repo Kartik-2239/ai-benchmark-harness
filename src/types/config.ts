@@ -4,13 +4,11 @@ import { z } from "zod";
 export type Model = {
     id: string
     model: LanguageModel
-    api_key: string
 }
 
 type EvalModel = {
     id: string
     model: LanguageModel
-    api_key: string
     prompt: string
 }
 

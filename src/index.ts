@@ -11,17 +11,14 @@ const models: Model[]  = [
     {
         id: "minimax/minimax-m3",
         model: openrouter("minimax/minimax-m3"),
-        api_key: process.env.OPENROUTER_API_KEY || ""
     },
     {
         id: "deepseek/deepseek-v4-flash",
         model: openrouter("deepseek/deepseek-v4-flash"),
-        api_key: process.env.OPENROUTER_API_KEY || ""
     },
     {
         id: "qwen/qwen3.7-plus",
         model: openrouter("qwen/qwen3.7-plus"),
-        api_key: process.env.OPENROUTER_API_KEY || ""
     },
 ]
 
