@@ -80,11 +80,12 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         this.render()
         for (const model of this.config.models) {
             for (const question of this.data.data) {
-                const result = await generate(model.model, question.context, question.tools, this.config.schema)
+                const sys_prompt = question.system_prompt ? question.system_prompt : this.config.system_prompt
+                const result = await generate(model.model, question.context, question.tools, this.config.schema, sys_prompt)
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
                 const to_save = CacheWrite<TExpectedAnswer>({
                     id: this.id,
-                    name: this.data.name,
+                    dataset_name: this.data.name,
                     dataset_id: this.data.id,
                     dataset_path: "",
                     expected_answer: question.expected_answer,
@@ -148,8 +149,8 @@ export class Benchmark<TExpectedAnswer, TSchema> {
     private render(): void {
         if (!this.cacheFile) {
             this.cacheFile = {
-                id: this.data.id,
-                name: this.data.name,
+                id: this.id,
+                dataset_name: this.data.name,
                 dataset_id: this.data.id,
                 dataset_path: "",
                 version: this.data.version,

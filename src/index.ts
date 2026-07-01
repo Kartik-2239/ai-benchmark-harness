@@ -1,10 +1,21 @@
 import type { Config, Model } from "./types/config.js";
 import { Benchmark } from "./benchmark/benchmark.js";
 import type { BenchmarkDataset } from "./types/data.js";
-import { type LanguageModel, type ToolSet, tool } from "ai";
 import { z } from "zod";
 import { openrouter } from "@openrouter/ai-sdk-provider";
+import fs from "fs";
+import React from "react";
+import { render } from "ink";
+import { TableProvider } from "./tui/tui.js";
 
+
+type ExpectedAnswer = string
+
+const schema = z.object({
+    answer: z.string(),
+
+})
+type Schema = z.infer<typeof schema>;
 
 
 const models: Model[]  = [
@@ -22,9 +33,9 @@ const models: Model[]  = [
     },
 ]
 
-const date = new Date()
+
 const data: BenchmarkDataset<ExpectedAnswer> = {
-    id: date.getTime().toString(),
+    id: "sample-dataset",
     name: "Test Dataset",
     description: "Placeholder dataset for simulating a benchmark run without AI.",
     version: "1",
@@ -44,15 +55,6 @@ const data: BenchmarkDataset<ExpectedAnswer> = {
 
 
 
-type ExpectedAnswer = string
-
-const schema = z.object({
-    answer: z.string(),
-
-})
-type Schema = z.infer<typeof schema>;
-
-
 function evaluatorFunction(
     question: string, 
     expected_answer: ExpectedAnswer, 
@@ -69,10 +71,11 @@ const config: Config<ExpectedAnswer, Schema> = {
     evaluator_models: null,
     evaluator_function: evaluatorFunction,
     schema: schema,
-    models: models
+    models: models,
+    system_prompt: "Respond in json"
 }
-
-const benchmark = new Benchmark(config, "benchmark-1", data);
+const date = new Date()
+const benchmark = new Benchmark(config, date.getTime().toString(), data);
 benchmark.run()
 
 // var last: ReturnType<typeof render> | undefined

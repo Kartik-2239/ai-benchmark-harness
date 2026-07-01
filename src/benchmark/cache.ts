@@ -11,10 +11,10 @@ const PATH = "./cache"
  * @returns The updated cache file.
  */
 export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>, models: string[]): CacheFile<TExpectedAnswer> {
-    let cacheFile = FindCacheFile(p.dataset_id, p.version)
+    let cacheFile = FindCacheFile(p.id)
     if (cacheFile === null) {
         cacheFile = {
-            name: p.name,
+            dataset_name: p.dataset_name,
             id: p.id,
             dataset_id: p.dataset_id,
             dataset_path: p.dataset_path,
@@ -35,7 +35,7 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
         score: p.score,
         tools: p.tools || []
     })
-    fs.writeFileSync(`${PATH}/${p.dataset_id}-${p.version}.json`, JSON.stringify(cacheFile, null, 2))
+    fs.writeFileSync(`${PATH}/${p.id}.json`, JSON.stringify(cacheFile, null, 2))
     return cacheFile as CacheFile<TExpectedAnswer>
 }
 
@@ -47,11 +47,11 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
  * @param question_id - The question identifier.
  * @returns The cached answer, or null if not found.
  */
-export function CacheRead<TExpectedAnswer>(dataset_id: string, version: string, model: string, question_id: string): CacheAnswer<TExpectedAnswer> | null {
-    const cacheFile = FindCacheFile<TExpectedAnswer>(dataset_id, version)
-    if (cacheFile === null) return null
-    return cacheFile.answers.find(a => a.model === model && a.question_id === question_id) ?? null
-}
+// export function CacheRead<TExpectedAnswer>(id: string, model: string, question_id: string): CacheAnswer<TExpectedAnswer> | null {
+//     const cacheFile = FindCacheFile<TExpectedAnswer>(id)
+//     if (cacheFile === null) return null
+//     return cacheFile.answers.find(a => a.model === model && a.question_id === question_id) ?? null
+// }
 
 /**
  * Loads the cache file for a dataset/version if it exists.
@@ -59,8 +59,8 @@ export function CacheRead<TExpectedAnswer>(dataset_id: string, version: string, 
  * @param version - The dataset version.
  * @returns The parsed cache file, or null if no cache exists.
  */
-export function FindCacheFile<TExpectedAnswer>(dataset_id: string, version: string): CacheFile<TExpectedAnswer> | null {
-    const filePath = `${PATH}/${dataset_id}-${version}.json`
+export function FindCacheFile<TExpectedAnswer>(id: string): CacheFile<TExpectedAnswer> | null {
+    const filePath = `${PATH}/${id}.json`
     if (fs.existsSync(filePath)) {
         const fileContent = fs.readFileSync(filePath, "utf-8")
         return JSON.parse(fileContent) as CacheFile<TExpectedAnswer>

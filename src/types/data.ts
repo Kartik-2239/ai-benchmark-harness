@@ -14,5 +14,5 @@ interface BenchmarkQuestion<TExpectedAnswer> {
     context: ModelMessage[]
     expected_answer: TExpectedAnswer
     tools?: ToolSet
-    // allowed tools
+    system_prompt?: string
 }

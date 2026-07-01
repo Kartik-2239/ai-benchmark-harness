@@ -22,6 +22,7 @@ export async function generate<TSchema>(
     messages: ModelMessage[],
     tools: ToolSet | undefined,
     schema: z.ZodType<TSchema>,
+    system_prompt?: string
 ): Promise<GenerateResult<TSchema>> {
     const start = performance.now()
     if (tools === undefined) {
@@ -30,7 +31,8 @@ export async function generate<TSchema>(
 
     const result = await generateText({
         model,
-        messages,
+        instructions: system_prompt ? system_prompt : "Please respond in JSON format.",
+        messages: messages,
         tools: tools,
         output: Output.object({ schema }),
     })

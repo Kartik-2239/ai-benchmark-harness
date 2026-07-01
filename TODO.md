@@ -1,4 +1,4 @@
 - [ ] make the benchmark tui look good with a bunch of states
-- [ ] fix the ids of dataset, answers and the save file name unify them
-- [ ] error handling
+- [ ] fix cache read
+- [x] fix the ids of dataset, answers and the save file name unify them
 - [ ] Make documentation for clankers

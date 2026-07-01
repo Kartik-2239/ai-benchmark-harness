@@ -61,7 +61,7 @@ export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile
   return (
     <Box flexDirection="column" padding={1}>
       <Box width={64} paddingX={1} marginBottom={1} borderStyle="round" flexDirection="column" borderColor="cyan">
-        <Text color="cyan">Ai BenchMark · {cacheFile.name}</Text>
+        <Text color="cyan">Ai BenchMark · {cacheFile.dataset_name} · {cacheFile.id}</Text>
         <Text color="yellow">Models: {done}/{rows.length} done · {allAnswers}/{rows.length * total} answers</Text>
       </Box>
       <Box>
