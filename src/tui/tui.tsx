@@ -41,7 +41,7 @@ function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): Mode
     }
     row.count++
     row.totalCost += a.cost
-    row.totalTime += a.time
+    row.totalTime += a.time_taken
     row.totalScore += a.score
   }
   return [...byModel.values()]

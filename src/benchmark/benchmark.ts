@@ -1,7 +1,7 @@
 import { type Config } from '@/types/config.js'
 import { type BenchmarkDataset } from '@/types/data.js'
 import { type BenchmarkEvent } from '@/types/benchmark-events.js'
-import { CacheWrite } from './cache.js'
+import { CacheWrite, FindCacheFile } from './cache.js'
 import type { ModelMessage } from 'ai'
 import { generate } from '@/benchmark/ai.js'
 import { render, type Instance } from 'ink'
@@ -54,6 +54,15 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * @returns A promise that resolves when the benchmark finishes.
      */
     async run(): Promise<void> {
+        const shutdown = () => {
+            if (this.last) {
+                this.last.unmount()
+            }
+            console.log("\nresume benchmark with: pnpm dev --resume " + this.id)
+            process.exit(0)
+        }
+        process.on("SIGINT", shutdown);
+        process.on("SIGTERM", shutdown);
         for await (const event of this.runner()) {
             switch (event.type) {
                 case "progress":
@@ -80,6 +89,9 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         this.render()
         for (const model of this.config.models) {
             for (const question of this.data.data) {
+                if (this.cacheFile && check_exists(this.cacheFile, model.id, question.id)) {
+                    continue
+                }
                 const sys_prompt = question.system_prompt ? question.system_prompt : this.config.system_prompt
                 const result = await generate(model.model, question.context, question.tools, this.config.schema, sys_prompt)
                 const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
@@ -100,23 +112,6 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                     score: score ?? 0,
                     tools: result.tools || []
                 }, this.config.models.map(m => m.id))
-
-                final.totalCost += result.cost
-                const model_data = final.perModel.find(m => m.model === model.id)
-                final.avgScore += (score ?? 0) / (this.data.data.length * this.config.models.length)
-                if (model_data) {
-                    model_data.cost += result.cost
-                    model_data.avgScore += score ?? 0
-                    model_data.count++
-                    final.perModel = final.perModel.map(m => m.model === model.id ? model_data : m)
-                }else {
-                    final.perModel.push({
-                        model: model.id,
-                        cost: result.cost,
-                        avgScore: score ?? 0,
-                        count: 1
-                    })
-                }
                 
                 yield {
                     type: "progress",
@@ -143,17 +138,22 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             }))
         }
     }
+
+    private write_cache() {
+        
+    }
     /**
      * Renders or re-renders the benchmark progress table in the terminal.
      */
     private render(): void {
+        let cacheFile = FindCacheFile<TExpectedAnswer>(this.id)
         if (!this.cacheFile) {
-            this.cacheFile = {
+            this.cacheFile = cacheFile ?? {
                 id: this.id,
                 dataset_name: this.data.name,
                 dataset_id: this.data.id,
                 dataset_path: "",
-                version: this.data.version,
+                version: this.version,
                 models: this.config.models.map(m => m.id),
                 answers: []
             }
@@ -164,4 +164,8 @@ export class Benchmark<TExpectedAnswer, TSchema> {
             this.last.rerender(React.createElement(TableProvider, { cacheFile: this.cacheFile, data: this.data }))
         }
     }
+}
+
+function check_exists<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>, model: string, question_id: string): boolean {
+    return cacheFile.answers.some(a => a.model === model && a.question_id === question_id)
 }

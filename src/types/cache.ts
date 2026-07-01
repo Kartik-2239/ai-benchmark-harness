@@ -20,7 +20,8 @@ interface CacheAnswer<TExpectedAnswer> {
     answer: string
     model: string
     cost: number
-    time: number
+    time_taken: number
+    time_stamp: number
     score: number
     tools: string[]
 }

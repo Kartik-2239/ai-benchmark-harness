@@ -9,7 +9,7 @@ export interface BenchmarkDataset<TExpectedAnswer> {
 }
 
 
-interface BenchmarkQuestion<TExpectedAnswer> {
+export interface BenchmarkQuestion<TExpectedAnswer> {
     id: string
     context: ModelMessage[]
     expected_answer: TExpectedAnswer

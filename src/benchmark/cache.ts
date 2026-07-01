@@ -31,7 +31,8 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
         answer: p.answer,
         model: p.model,
         cost: p.cost,
-        time: p.time,
+        time_taken: p.time,
+        time_stamp: Date.now(),
         score: p.score,
         tools: p.tools || []
     })

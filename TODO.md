@@ -1,4 +1,5 @@
 - [ ] make the benchmark tui look good with a bunch of states
-- [ ] fix cache read
+- [ ] image and video input support
+- [x] fix cache read
 - [x] fix the ids of dataset, answers and the save file name unify them
 - [ ] Make documentation for clankers

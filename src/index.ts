@@ -46,7 +46,7 @@ const data: BenchmarkDataset<ExpectedAnswer> = {
             expected_answer: "weather in bangalore",
         },
         {
-            id: "q-1",
+            id: "q-2",
             context: [{ role: "user", content: "what is the capital of delhi?" }],
             expected_answer: "weather in bangalore",
         },
@@ -75,7 +75,7 @@ const config: Config<ExpectedAnswer, Schema> = {
     system_prompt: "Respond in json"
 }
 const date = new Date()
-const benchmark = new Benchmark(config, date.getTime().toString(), data);
+const benchmark = new Benchmark(config, "1782886321983", data);
 benchmark.run()
 
 // var last: ReturnType<typeof render> | undefined
