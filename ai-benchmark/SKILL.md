@@ -1,5 +1,5 @@
 ---
-name: data-curation
+name: ai-benchmark
 description: data curation.
 ---
 
