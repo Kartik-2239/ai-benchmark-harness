@@ -38,6 +38,7 @@ export function CacheWrite<TExpectedAnswer>(p: CacheWriteParams<TExpectedAnswer>
         score: p.score,
         tools: p.tools || []
     })
+    fs.mkdirSync(PATH, { recursive: true })
     fs.writeFileSync(`${PATH}/${p.id}.json`, JSON.stringify(cacheFile, null, 2))
     return cacheFile as CacheFile<TExpectedAnswer>
 }

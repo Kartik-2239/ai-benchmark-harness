@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && tsc-alias",
-    "example": "tsx examples/basic.ts",
+    "example-1": "tsx examples/using-eval-func.ts",
+    "example-2": "tsx examples/using-eval-models.ts",
     "dev": "tsx src/index.ts"
   },
   "module": "NodeNext",
