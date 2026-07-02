@@ -15,10 +15,10 @@ type EvalModel = {
 export interface Config<TExpectedAnswer, TSchema> {
     evaluator_models: EvalModel[] | null
     evaluator_function: (
-        question: string,
         expected_answer: TExpectedAnswer,
         model_answer: TSchema,
-        tools_calls: string[]
+        tools_calls: string[],
+        question: string
     ) => number | null
     schema: z.ZodType<TSchema>
     models: Model[]

@@ -3,16 +3,17 @@ import { Box, render, Text } from 'ink'
 import type { CacheFile } from '@/types/cache.js'
 import type { BenchmarkDataset } from '@/types/data.js'
 
-type Color = 'cyan' | 'green' | 'red' | 'yellow' | 'gray' | 'white'
+type Color = 'cyan' | 'green' | 'red' | 'yellow' | 'gray' | 'lightgray' | 'white'
 
 /**
  * A single table column cell that aligns text and applies an optional color.
  */
-const Col = ({ children, width, align, color }: { children: React.ReactNode; width?: number; align?: 'flex-start' | 'center' | 'flex-end'; color?: Color }) => (
+const Col = ({ children, width, align, color }: { children: React.ReactNode; width: number | undefined; align?: 'flex-start' | 'center' | 'flex-end'; color: Color | undefined }) => (
   <Box width={width} flexGrow={width ? 0 : 1} paddingRight={2} justifyContent={align ?? 'center'}>
     <Text wrap="truncate-end" color={color ?? 'white'}>{children}</Text>
   </Box>
 )
+
 
 interface ModelRow {
   model: string
@@ -20,6 +21,33 @@ interface ModelRow {
   totalCost: number
   totalTime: number
   totalScore: number
+  totalOutputTokens: number
+  errors?: number
+}
+
+interface Column {
+  name: string
+  align: 'flex-start' | 'center' | 'flex-end'
+  format: (r: ModelRow, total: number) => string
+  color?: (r: ModelRow, complete: boolean) => Color
+}
+
+const PAD = 2
+
+const COLUMNS: Column[] = [
+  { name: 'Model', align: 'flex-start', format: r => r.model, color: (r, c) => c ? 'green' : r.count === 0 && (r.errors ?? 0) === 0 ? 'lightgray' : 'yellow' },
+  { name: 'Progress', align: 'flex-start', format: (r, t) => `${Math.max(r.count - (r.errors ?? 0), 0)}/${t}`, color: (r, c) => c ? 'green' : r.count === 0 && (r.errors ?? 0) === 0 ? 'lightgray' : 'yellow' },
+  { name: 'Score', align: 'flex-start', format: r => r.count === 0 && (r.errors ?? 0) === 0 ? '-' : String(r.totalScore) },
+  { name: 'Error', align: 'flex-start', format: r => (r.errors ?? 0) > 0 ? String(r.errors ?? 0) : '-', color: r => (r.errors ?? 0) > 0 ? 'red' : 'lightgray' },
+  { name: 'Cost', align: 'flex-start', format: r => r.count === 0 && (r.errors ?? 0) === 0 ? '-' : `$${r.totalCost.toFixed(4)}`, color: r => r.count === 0 && (r.errors ?? 0) === 0 ? 'lightgray' : 'white' },
+  { name: 'Tokens', align: 'flex-start', format: r => r.count === 0 && (r.errors ?? 0) === 0 ? '-' : String(r.totalOutputTokens) },
+  { name: 'Time', align: 'flex-start', format: r => r.count === 0 && (r.errors ?? 0) === 0 ? '-' : `${(r.totalTime / 1000).toFixed(1)}s` },
+]
+
+function colWidths(rows: ModelRow[], total: number): number[] {
+  return COLUMNS.map((col, i) =>
+    Math.max(col.name.length, ...rows.map(r => col.format(r, total).length)) + PAD
+  )
 }
 
 /**
@@ -31,18 +59,22 @@ interface ModelRow {
 function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): ModelRow[] {
   const byModel = new Map<string, ModelRow>()
   for (const model of cacheFile.models) {
-    byModel.set(model, { model, count: 0, totalCost: 0, totalTime: 0, totalScore: 0 })
+    byModel.set(model, { model, count: 0, totalCost: 0, totalTime: 0, totalScore: 0, totalOutputTokens: 0, errors: 0 })
   }
   for (const a of cacheFile.answers) {
     let row = byModel.get(a.model)
     if (!row) {
-      row = { model: a.model, count: 0, totalCost: 0, totalTime: 0, totalScore: 0 }
+      row = { model: a.model, count: 0, totalCost: 0, totalTime: 0, totalScore: 0, totalOutputTokens: 0, errors: 0 }
       byModel.set(a.model, row)
     }
     row.count++
     row.totalCost += a.cost
     row.totalTime += a.time_taken
     row.totalScore += a.score
+    row.totalOutputTokens += a.output_tokens
+    if (!a.success) {
+      row.errors!++
+    }
   }
   return [...byModel.values()]
 }
@@ -53,48 +85,32 @@ function aggregate<TExpectedAnswer>(cacheFile: CacheFile<TExpectedAnswer>): Mode
 export const TableProvider = <TExpectedAnswer,>({ cacheFile, data }: { cacheFile: CacheFile<TExpectedAnswer>; data: BenchmarkDataset<TExpectedAnswer> }) => {
   const total = data.data.length
   const rows = aggregate(cacheFile)
-  const done = rows.filter(r => r.count >= total).length
-  const allAnswers = rows.reduce((s, r) => s + r.count, 0)
-  const allCost = rows.reduce((s, r) => s + r.totalCost, 0)
-  const allTime = rows.reduce((s, r) => s + r.totalTime, 0)
+  const widths = colWidths(rows, total)
+  const tableWidth = widths.reduce((a, w) => a + w, 0)
 
   return (
-    <Box flexDirection="column" padding={1}>
-      <Box width={64} paddingX={1} marginBottom={1} borderStyle="round" flexDirection="column" borderColor="cyan">
-        <Text color="cyan">Ai BenchMark · {cacheFile.dataset_name} · {cacheFile.id}</Text>
-        <Text color="yellow">Models: {done}/{rows.length} done · {allAnswers}/{rows.length * total} answers</Text>
+    <Box flexDirection="column" padding={0}>
+      <Box width={tableWidth} paddingX={0} marginBottom={1} flexDirection="column" borderColor="cyan">
+        <Text></Text>
+        <Text>Benchmark <Text color="cyan">{cacheFile.id}</Text> • Dataset <Text color="cyan">{cacheFile.dataset_name}</Text></Text>
       </Box>
-      <Box>
-        <Col align="flex-start" width={24}>Model</Col>
-        <Col width={12}>Progress</Col>
-        <Col width={10}>Score</Col>
-        <Col width={12}>Cost</Col>
-        <Col width={10}>Time</Col>
+      <Box borderLeft={false} width={tableWidth} borderDimColor borderRight={false} borderTop={false} borderStyle="single">
+        {COLUMNS.map((c, i) => (
+          <Col key={c.name} align={c.align} width={widths[i]} color={undefined}>{c.name}</Col>
+        ))}
       </Box>
-      <Text dimColor>{'─'.repeat(64)}</Text>
       {rows.map((r) => {
         const complete = r.count >= total
-        const avg = r.count ? r.totalScore / r.count : 0
         return (
           <Box key={r.model}>
-            <Col align="flex-start" width={24} color={complete ? 'white' : 'yellow'}>{r.model}</Col>
-            <Col width={12} color={complete ? 'green' : 'yellow'}>{r.count}/{total}</Col>
-            <Col width={10}>{r.totalScore}</Col>
-            <Col color="cyan" width={12}>${r.totalCost.toFixed(4)}</Col>
-            <Col width={10}>{(r.totalTime / 1000).toFixed(1)}s</Col>
+            {COLUMNS.map((c, i) => (
+              <Col key={c.name} align={c.align} width={widths[i]} color={c.color?.(r, complete)}>
+                {c.format(r, total)}
+              </Col>
+            ))}
           </Box>
         )
       })}
-      <Text dimColor>{'─'.repeat(64)}</Text>
-      <Box>
-        <Col align="flex-start" width={24} color="cyan">Total</Col>
-        {/* <Col width={12}>{allAnswers}/{rows.length * total}</Col>
-        <Col width={10}>{allAnswers ? (allScore / allAnswers).toFixed(1) : '0.0'}</Col> */}
-        <Col color="cyan" width={12}>-</Col>
-        <Col width={10}>-</Col>
-        <Col color="cyan" width={12}>${allCost.toFixed(4)}</Col>
-        <Col width={10}>{(allTime / 1000).toFixed(1)}s</Col>
-      </Box>
     </Box>
   )
 }

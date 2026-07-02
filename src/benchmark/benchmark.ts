@@ -56,22 +56,22 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * @returns A promise that resolves when the benchmark finishes.
      */
     async run(): Promise<void> {
-        const shutdown = () => {
-            if (this.last) {
-                this.last.unmount()
-            }
-            console.log("\nresume benchmark with: pnpm dev --resume " + this.id)
-            process.exit(0)
-        }
-        process.on("SIGINT", shutdown);
-        process.on("SIGTERM", shutdown);
+        // const shutdown = () => {
+        //     if (this.last) {
+        //         this.last.unmount()
+        //     }
+        //     console.log("\nresume benchmark with: pnpm dev --resume " + this.id)
+        //     process.exit(0)
+        // }
+        // process.on("SIGINT", shutdown);
+        // process.on("SIGTERM", shutdown);
         for await (const event of this.runner()) {
             this.render()
             switch (event.type) {
                 case "progress":
                     break;
                 case "error":
-                    console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
+                    // console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
                     break;
                 case "finish":
                     break;
