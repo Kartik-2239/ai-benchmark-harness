@@ -102,17 +102,6 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>;
 
-function evaluatorFunction(
-    expected_answer: ExpectedAnswer, 
-    model_answer: Schema
-): number {
-    let score = 0
-    if (expected_answer.toLowerCase() === model_answer.answer.toLowerCase()) {
-        score += 100
-    }
-    return score
-}
-
 const evaluatorModels: EvalModel[] = [
     {
         id: "z-ai/glm-4.7-flash",
@@ -131,5 +120,5 @@ const config: Config<ExpectedAnswer, Schema> = {
     system_prompt: "Respond in json and answer in one word exactly or name."
 }
 
-const benchmark = new Benchmark(config, "test-bench", data);
+const benchmark = new Benchmark(config, "using-eval-models", data);
 benchmark.run()
