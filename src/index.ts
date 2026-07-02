@@ -1,120 +1,23 @@
-import type { Config, Model } from "./types/config.js";
-import { Benchmark } from "./benchmark/benchmark.js";
-import type { BenchmarkDataset } from "./types/data.js";
-import { z } from "zod";
-import { openrouter } from "@openrouter/ai-sdk-provider";
+// Barrel file — re-exports the public API of `src`.
+// Note: the runnable entry point lives in `index-do-not-remove.ts` (it has
+// side effects at module load), so it is intentionally not re-exported here.
 
-const data: BenchmarkDataset<ExpectedAnswer> = {
-    id: "sample-dataset",
-    name: "Test Dataset",
-    description: "Placeholder dataset for simulating a benchmark run without AI.",
-    version: "1",
-    data: ([
-        {
-            id: "q-1",
-            context: [{ role: "user", content: "What is the capital of Karnataka?" }],
-            expected_answer: "Bengaluru",
-        },
-        {
-            id: "q-2",
-            context: [{ role: "user", content: "Who wrote Romeo and Juliet?" }],
-            expected_answer: "William Shakespeare",
-        },
-        {
-            id: "q-3",
-            context: [{ role: "user", content: "What is the largest planet in our solar system?" }],
-            expected_answer: "Jupiter",
-        },
-        {
-            id: "q-4",
-            context: [{ role: "user", content: "What is the boiling point of water in Celsius?" }],
-            expected_answer: "100",
-        },
-        {
-            id: "q-5",
-            context: [{ role: "user", content: "Which continent is Egypt in?" }],
-            expected_answer: "Africa",
-        },
-    ])
-};
+// --- Benchmark runner ---
+export { Benchmark } from '@/benchmark/benchmark.js'
 
-const models: Model[]  = [
-    {
-        id: "minimax/minimax-m3",
-        model: openrouter("minimax/minimax-m3"),
-    },
-    {
-        id: "minimax/minimax-m2.7",
-        model: openrouter("minimax/minimax-m2.7"),
-    },
-    {
-        id: "moonshotai/kimi-k2.6",
-        model: openrouter("moonshotai/kimi-k2.6"),
-    },
-    {
-        id: "xiaomi/mimo-v2.5",
-        model: openrouter("xiaomi/mimo-v2.5"),
-    },
-    {
-        id: "xiaomi/mimo-v2.5-pro",
-        model: openrouter("xiaomi/mimo-v2.5-pro"),
-    },
-    {
-        id: "deepseek/deepseek-v4-flash",
-        model: openrouter("deepseek/deepseek-v4-flash"),
-    },
-    {
-        id: "qwen/qwen3.7-plus",
-        model: openrouter("qwen/qwen3.7-plus"),
-    },
-    {
-        id: "nvidia/nemotron-3-ultra-550b-a55b:free",
-        model: openrouter("nvidia/nemotron-3-ultra-550b-a55b:free"),
-    },
-    {
-        id: "inclusionai/ling-2.6-flash",
-        model: openrouter("inclusionai/ling-2.6-flash"),
-    },
-    {
-        id: "google/gemma-4-26b-a4b-it",
-        model: openrouter("google/gemma-4-26b-a4b-it"),
-    },
-    {
-        id: "google/gemma-4-31b-it",
-        model: openrouter("google/gemma-4-31b-it"),
-    },
-    {
-        id: "z-ai/glm-4.7-flash",
-        model: openrouter("z-ai/glm-4.7-flash"),
-    },
-]
+// --- Benchmark cache ---
+export { CacheWrite, FindCacheFile } from '@/benchmark/cache.js'
 
-type ExpectedAnswer = string
+// --- AI generation ---
+export { generate } from '@/benchmark/ai.js'
+export type { GenerateResult } from '@/benchmark/ai.js'
 
-const schema = z.object({
-    answer: z.string(),
-})
+// --- Terminal UI ---
+export { TableProvider } from '@/tui/tui.js'
+export { default as run } from '@/tui/tui.js'
 
-type Schema = z.infer<typeof schema>;
-
-function evaluatorFunction(
-    expected_answer: ExpectedAnswer, 
-    model_answer: Schema
-): number {
-    let score = 0
-    if (expected_answer.toLowerCase() === model_answer.answer.toLowerCase()) {
-        score += 100
-    }
-    return score
-}
-
-const config: Config<ExpectedAnswer, Schema> = {
-    evaluator_models: null,
-    evaluator_function: evaluatorFunction,
-    schema: schema,
-    models: models,
-    system_prompt: "Respond in json and answer in one word exactly or name."
-}
-
-const benchmark = new Benchmark(config, "test-bench", data);
-benchmark.run()
+// --- Types ---
+export type { Model, Config } from '@/types/config.js'
+export type { CacheFile, CacheAnswer, CacheWriteParams } from '@/types/cache.js'
+export type { BenchmarkDataset, BenchmarkQuestion } from '@/types/data.js'
+export type { BenchmarkEvent } from '@/types/benchmark-events.js'

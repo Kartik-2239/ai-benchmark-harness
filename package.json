@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && tsc-alias",
+    "example": "tsx examples/cli.ts",
     "dev": "tsx src/index.ts"
   },
   "module": "NodeNext",
@@ -26,9 +27,6 @@
     "typescript-eslint": "^8.62.0"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.1",
-    "@ai-sdk/google": "^4.0.2",
-    "@ai-sdk/openai": "^4.0.2",
     "@openrouter/ai-sdk-provider": "^2.10.0",
     "ai": "^7.0.4",
     "dotenv": "^17.4.2",

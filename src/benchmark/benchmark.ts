@@ -47,7 +47,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      */
     private async evaluateModelAnswer(context: ModelMessage[], expected_answer: TExpectedAnswer, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
         if (this.config.evaluator_function) {
-            return this.config.evaluator_function(context[context.length-1]?.content as string, expected_answer, model_answer, tool_calls)
+            return this.config.evaluator_function(expected_answer, model_answer, tool_calls, context[context.length-1]?.content as string)
         }
         return null
     }
@@ -171,9 +171,6 @@ export class Benchmark<TExpectedAnswer, TSchema> {
         }
     }
 
-    private write_cache() {
-        
-    }
     /**
      * Renders or re-renders the benchmark progress table in the terminal.
      */
