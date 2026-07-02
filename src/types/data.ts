@@ -13,6 +13,7 @@ export interface BenchmarkQuestion<TExpectedAnswer> {
     id: string
     context: ModelMessage[]
     expected_answer: TExpectedAnswer
+    max_score: number
     tools?: ToolSet
     system_prompt?: string
 }

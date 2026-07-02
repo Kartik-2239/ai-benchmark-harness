@@ -1,5 +1,6 @@
+import type { BenchmarkQuestion } from "@/types/data.js";
 import { generateText, Output, type LanguageModel, type ModelMessage, type ToolSet } from "ai";
-import type { z } from "zod";
+import { z } from "zod";
 
 export interface GenerateResult<TSchema> {
     answer: string
@@ -20,10 +21,10 @@ export interface GenerateResult<TSchema> {
  */
 export async function generate<TSchema>(
     model: LanguageModel,
-    messages: ModelMessage[],
-    tools: ToolSet | undefined,
+    messages: ModelMessage[],    
     schema: z.ZodType<TSchema>,
-    system_prompt?: string
+    system_prompt?: string,
+    tools?: ToolSet,
 ): Promise<GenerateResult<TSchema>> {
     const start = performance.now()
     if (tools === undefined) {
@@ -49,4 +50,30 @@ export async function generate<TSchema>(
         time,
         tools: result.toolCalls.map(tc => tc.toolName),
     }
+}
+
+export async function generateEvaluation<TExpectedAnswer, TSchema>(
+    model: LanguageModel,
+    answer: TSchema,
+    question: BenchmarkQuestion<TExpectedAnswer>,
+    max_score: number,
+    system_prompt?: string
+): Promise<{score: number}> {
+    if (!system_prompt) {
+        system_prompt = `You are an expert evaluator. You are given a question
+                         and an answer, The question contains an expected answer 
+                         which you would have to compare the generated answer 
+                         with. You will evaluate the answer and return a 
+                         score between 0 and ${max_score}. You will 
+                         return your response in JSON format with a single key 
+                         'score'.
+                        `
+    }
+    const schema = z.object({
+        score: z.number().min(0).max(max_score)
+    })
+    const response = await generate(model, [
+        { role: "user", content: JSON.stringify({ answer, question }) }
+    ], schema, system_prompt)
+    return { score: response.schema.score }
 }

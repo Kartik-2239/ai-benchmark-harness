@@ -1,4 +1,4 @@
-import type { Config, Model } from "../src/types/config.js";
+import type { Config, EvalModel, Model } from "../src/types/config.js";
 import { Benchmark } from "../src/benchmark/benchmark.js";
 import type { BenchmarkDataset } from "../src/types/data.js";
 import { z } from "zod";
@@ -14,26 +14,31 @@ const data: BenchmarkDataset<ExpectedAnswer> = {
             id: "q-1",
             context: [{ role: "user", content: "What is the capital of Karnataka?" }],
             expected_answer: "Bengaluru",
+            max_score: 100,
         },
         {
             id: "q-2",
             context: [{ role: "user", content: "Who wrote Romeo and Juliet?" }],
             expected_answer: "William Shakespeare",
+            max_score: 100,
         },
         {
             id: "q-3",
             context: [{ role: "user", content: "What is the largest planet in our solar system?" }],
             expected_answer: "Jupiter",
+            max_score: 100,
         },
         {
             id: "q-4",
             context: [{ role: "user", content: "What is the boiling point of water in Celsius?" }],
             expected_answer: "100",
+            max_score: 100,
         },
         {
             id: "q-5",
             context: [{ role: "user", content: "Which continent is Egypt in?" }],
             expected_answer: "Africa",
+            max_score: 100,
         },
     ])
 };
@@ -108,9 +113,19 @@ function evaluatorFunction(
     return score
 }
 
+const evaluatorModels: EvalModel[] = [
+    {
+        id: "z-ai/glm-4.7-flash",
+        model: openrouter("z-ai/glm-4.7-flash"),
+    },
+    {
+        id: "deepseek/deepseek-v4-flash",
+        model: openrouter("deepseek/deepseek-v4-flash"),
+    },
+]
+
 const config: Config<ExpectedAnswer, Schema> = {
-    evaluator_models: null,
-    evaluator_function: evaluatorFunction,
+    evaluator_models: evaluatorModels,
     schema: schema,
     models: models,
     system_prompt: "Respond in json and answer in one word exactly or name."

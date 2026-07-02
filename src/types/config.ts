@@ -6,15 +6,15 @@ export type Model = {
     model: LanguageModel
 }
 
-type EvalModel = {
+export type EvalModel = {
     id: string
     model: LanguageModel
-    prompt: string
+    prompt?: string
 }
 
 export interface Config<TExpectedAnswer, TSchema> {
-    evaluator_models: EvalModel[] | null
-    evaluator_function: (
+    evaluator_models?: EvalModel[]
+    evaluator_function?: (
         expected_answer: TExpectedAnswer,
         model_answer: TSchema,
         tools_calls: string[],

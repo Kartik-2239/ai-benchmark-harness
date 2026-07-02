@@ -1,9 +1,9 @@
 import { type Config } from '@/types/config.js'
-import { type BenchmarkDataset } from '@/types/data.js'
+import { type BenchmarkDataset, type BenchmarkQuestion } from '@/types/data.js'
 import { type BenchmarkEvent } from '@/types/benchmark-events.js'
 import { CacheWrite, FindCacheFile } from './cache.js'
 import type { ModelMessage } from 'ai'
-import { generate } from '@/benchmark/ai.js'
+import { generate, generateEvaluation } from '@/benchmark/ai.js'
 import { render, type Instance } from 'ink'
 import type { CacheFile } from '@/types/cache.js'
 import { TableProvider } from '@/tui/tui.js'
@@ -45,9 +45,31 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * @param tool_calls - Names of tools invoked by the model.
      * @returns A numeric score, or null if no evaluator is configured.
      */
-    private async evaluateModelAnswer(context: ModelMessage[], expected_answer: TExpectedAnswer, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
+    private async evaluateModelAnswer(question: BenchmarkQuestion<TExpectedAnswer>, model_answer: TSchema, tool_calls: string[]): Promise<number | null> {
         if (this.config.evaluator_function) {
-            return this.config.evaluator_function(expected_answer, model_answer, tool_calls, context[context.length-1]?.content as string)
+            return this.config.evaluator_function(question.expected_answer, model_answer, tool_calls, question.context[question.context.length-1]?.content as string)
+        }else if (this.config.evaluator_models && this.config.evaluator_models.length > 0) {
+            let score = 0
+            let successes = 0
+            const results = await Promise.allSettled(
+                this.config.evaluator_models.
+                    filter(m => m.model !== null && m.model !== undefined).
+                    map(model => 
+                        generateEvaluation(
+                            model?.model,
+                            model_answer,
+                            question,
+                            question.max_score,
+                        )
+                    )
+            );
+            for (const result of results) {
+                if (result.status === "fulfilled") {
+                    score += result.value.score
+                    successes += 1
+                }
+            }
+            return successes > 0 ? Math.ceil(score / successes) : null
         }
         return null
     }
@@ -56,22 +78,15 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * @returns A promise that resolves when the benchmark finishes.
      */
     async run(): Promise<void> {
-        // const shutdown = () => {
-        //     if (this.last) {
-        //         this.last.unmount()
-        //     }
-        //     console.log("\nresume benchmark with: pnpm dev --resume " + this.id)
-        //     process.exit(0)
-        // }
-        // process.on("SIGINT", shutdown);
-        // process.on("SIGTERM", shutdown);
+        if (!this.config.evaluator_function && !this.config.evaluator_models) {
+            throw new Error("Provide at least an evaluator function or evaluator models.")
+        }
         for await (const event of this.runner()) {
             this.render()
             switch (event.type) {
                 case "progress":
                     break;
                 case "error":
-                    // console.error(`[${event.model}] ${event.questionId} — error: ${event.message}`);
                     break;
                 case "finish":
                     break;
@@ -82,7 +97,7 @@ export class Benchmark<TExpectedAnswer, TSchema> {
      * Generator that iterates over every model/question pair, yielding progress,
      * errors, and a final summary event.
      */
-    async *runner(): AsyncGenerator<BenchmarkEvent, void, unknown> {
+    private async *runner(): AsyncGenerator<BenchmarkEvent, void, unknown> {
         var final: BenchmarkEvent = {
             type: "finish",
             totalCost: 0,
@@ -97,8 +112,8 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                 }
                 try{
                     const sys_prompt = question.system_prompt ? question.system_prompt : this.config.system_prompt
-                    const result = await generate(model.model, question.context, question.tools, this.config.schema, sys_prompt)
-                    const score = await this.evaluateModelAnswer(question.context, question.expected_answer, result.schema, result.tools || [])
+                    const result = await generate(model.model, question.context, this.config.schema, sys_prompt, question.tools)
+                    const score = await this.evaluateModelAnswer(question, result.schema, result.tools || [])
                     const to_save = CacheWrite<TExpectedAnswer>({
                         id: this.id,
                         dataset_name: this.data.name,
@@ -110,12 +125,12 @@ export class Benchmark<TExpectedAnswer, TSchema> {
                         question: question.context[question.context.length-1]?.content as string,
                         context: question.context,
                         answer: result.answer,
-                        success: true,
+                        success: score ? true : false,
                         model: model.id,
                         cost: result.cost,
                         output_tokens: result.output_tokens || 0,
                         time: result.time,
-                        score: score ?? 0,
+                        score: score ? score : 0,
                         tools: result.tools || []
                     }, this.config.models.map(m => m.id))
                     
