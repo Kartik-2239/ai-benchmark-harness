@@ -15,9 +15,9 @@ export OPENROUTER_API_KEY=sk-or-...
 
 ```bash
 # using evaluator function
-pnpm example1
+pnpm onepiece-bench
 # using evaluator models
-pnpm example2
+pnpm naruto-bench
 ```
 
 ## Features
@@ -26,3 +26,6 @@ pnpm example2
 2. Creating schemas for model responses so that they can be used inside evaluator functions.
 3. Defining models using vercel ai sdk
 4. Tui with ink and react \:)
+
+## For Agents
+Read `ai-benchmark` skill in `.agents/skills`

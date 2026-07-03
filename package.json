@@ -6,9 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && tsc-alias",
-    "example-1": "tsx examples/using-eval-func.ts",
-    "example-2": "tsx examples/using-eval-models.ts",
-    "dev": "tsx src/index.ts"
+    "naruto-bench": "tsx examples/naruto-bench.ts",
+    "onepiece-bench": "tsx examples/onepiece-bench.ts"
   },
   "module": "NodeNext",
   "type": "module",
