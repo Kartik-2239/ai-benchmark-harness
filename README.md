@@ -1,4 +1,4 @@
-# ai-benchmark
+# ai-benchmark-harness
 
 A minimal benchmark harness built so that you can just ask an ai agent to build you any type of ai benchmarks.
 

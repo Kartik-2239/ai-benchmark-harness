@@ -1,5 +1,5 @@
 ---
-name: ai-benchmark
+name: ai-benchmark-harness
 description: Use this skill for writing ai benchmark scripts and data curation.
 ---
 
